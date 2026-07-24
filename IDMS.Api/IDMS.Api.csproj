@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../IDMS.Infrastructure/IDMS.Infrastructure.csproj" />
+    <ProjectReference Include="../IDMS.Modules.Api.Master/IDMS.Modules.Api.Master.csproj" />
     <ProjectReference Include="../IDMS.Shared/IDMS.Shared.csproj" />
   </ItemGroup>
 

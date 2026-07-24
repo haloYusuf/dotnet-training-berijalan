@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IDMS.Shared", "IDMS.Shared\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IDMS.Infrastructure", "IDMS.Infrastructure\IDMS.Infrastructure.csproj", "{07F14F13-FDC0-49D4-B3E6-BAC660B8555F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IDMS.Modules.Api.Master", "IDMS.Modules.Api.Master\IDMS.Modules.Api.Master.csproj", "{830735EF-CE53-463E-BA64-3EE24936CB90}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,18 @@ Global
 		{07F14F13-FDC0-49D4-B3E6-BAC660B8555F}.Release|x64.Build.0 = Release|Any CPU
 		{07F14F13-FDC0-49D4-B3E6-BAC660B8555F}.Release|x86.ActiveCfg = Release|Any CPU
 		{07F14F13-FDC0-49D4-B3E6-BAC660B8555F}.Release|x86.Build.0 = Release|Any CPU
+		{830735EF-CE53-463E-BA64-3EE24936CB90}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{830735EF-CE53-463E-BA64-3EE24936CB90}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{830735EF-CE53-463E-BA64-3EE24936CB90}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{830735EF-CE53-463E-BA64-3EE24936CB90}.Debug|x64.Build.0 = Debug|Any CPU
+		{830735EF-CE53-463E-BA64-3EE24936CB90}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{830735EF-CE53-463E-BA64-3EE24936CB90}.Debug|x86.Build.0 = Debug|Any CPU
+		{830735EF-CE53-463E-BA64-3EE24936CB90}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{830735EF-CE53-463E-BA64-3EE24936CB90}.Release|Any CPU.Build.0 = Release|Any CPU
+		{830735EF-CE53-463E-BA64-3EE24936CB90}.Release|x64.ActiveCfg = Release|Any CPU
+		{830735EF-CE53-463E-BA64-3EE24936CB90}.Release|x64.Build.0 = Release|Any CPU
+		{830735EF-CE53-463E-BA64-3EE24936CB90}.Release|x86.ActiveCfg = Release|Any CPU
+		{830735EF-CE53-463E-BA64-3EE24936CB90}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
