@@ -1,12 +1,14 @@
 using IDMS.Api.Helpers;
 using IDMS.Modules.Api.Master.Dto.Request;
 using IDMS.Modules.Api.Master.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IDMS.Api.Controllers;
 
 [ApiController]
 [Route("api/brand")]
+[Authorize]
 public class MstBrandController : ControllerBase
 {
     private readonly IMstBrandService _service;
@@ -22,6 +24,15 @@ public class MstBrandController : ControllerBase
         var (data, total) = await _service.GetListAsync(request);
 
         return Ok(ApiResponseHelper.Success(HttpContext, data, request.Page, request.Limit, total));
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> getById(int id)
+    {
+        var data = await _service.GetBrandByIdAsync(id);
+        return data is null ?
+            NotFound(ApiResponseHelper.Error(HttpContext, "Brand Not Found", "null")) :
+            Ok(ApiResponseHelper.Success(HttpContext, data));
     }
 
     [HttpPost]

@@ -28,18 +28,19 @@ public class MstBrandService : IMstBrandService
                 e.Name.ToLower().Contains(search));
         }
 
-        var total = await query.CountAsync();
+        var total = await query.Where(x => x.DeletedAt == null && x.DeletedBy == null).CountAsync();
 
         var items = await query
             .OrderBy(e => e.Code)
             .Skip((request.Page - 1) * request.Limit)
             .Take(request.Limit)
+            .Where(x => x.DeletedAt == null && x.DeletedBy == null)
             .Select(e => new ResMstBrandDto
             {
                 Id = e.Id,
                 Code = e.Code,
                 Name = e.Name,
-                IsActive = e.IsActive
+                IsActive = e.IsActive,
             })
             .ToListAsync();
 
@@ -56,7 +57,9 @@ public class MstBrandService : IMstBrandService
         {
             Code = request.Code,
             Name = request.Name,
-            IsActive = true
+            IsActive = true,
+            CreatedBy = "Admin1",
+            CreatedAt = DateTime.UtcNow
         };
 
         _db.MstBrands.Add(entity);
@@ -73,26 +76,26 @@ public class MstBrandService : IMstBrandService
 
     public async Task<ResMstBrandDto> UpdateAsync(int id, ReqMstBrandUpdateDto request)
     {
-        var entity = await _db.MstBrands.FindAsync(id);
-        if (entity == null)
-            throw new NotFoundException($"Brand with id {id} not found");
+        var brand = await _db.MstBrands
+        .FirstOrDefaultAsync(x => x.Id == id && x.DeletedAt == null) ?? throw new NotFoundException($"Brand with id {id} not found");
 
         var exists = await _db.MstBrands.AnyAsync(e => EF.Functions.ILike(e.Code, request.Code) && e.Id != id);
         if (exists)
             throw new ConflictException($"Code '{request.Code}' already exists");
 
-        entity.Code = request.Code;
-        entity.Name = request.Name;
-        entity.UpdatedAt = DateTime.UtcNow;
+        brand.Code = request.Code;
+        brand.Name = request.Name;
+        brand.UpdatedBy = "Admin";
+        brand.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync();
 
         return new ResMstBrandDto
         {
-            Id = entity.Id,
-            Code = entity.Code,
-            Name = entity.Name,
-            IsActive = entity.IsActive
+            Id = brand.Id,
+            Code = brand.Code,
+            Name = brand.Name,
+            IsActive = brand.IsActive
         };
     }
 
@@ -103,7 +106,25 @@ public class MstBrandService : IMstBrandService
             throw new NotFoundException($"Brand with id {id} not found");
 
         entity.DeletedAt = DateTime.UtcNow;
+        entity.DeletedBy = "Admin2";
 
         await _db.SaveChangesAsync();
+    }
+
+    public async Task<ResMstBrandDto?> GetBrandByIdAsync(int id)
+    {
+        var data = await _db.MstBrands.AsNoTracking()
+        .Where(v => v.Id == id && v.DeletedAt == null)
+        .Select(v => new ResMstBrandDto
+        {
+            Id = v.Id,
+            Code = v.Code,
+            Name = v.Name,
+            IsActive = v.IsActive
+        })
+        .FirstOrDefaultAsync();
+
+        return data;
+        // throw new NotImplementedException();
     }
 }

@@ -1,0 +1,68 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - IDMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+
+<body class="bg-gray-50 min-h-screen flex flex-col antialiased">
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <nav class="bg-white border-b border-gray-200 sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <div class="flex items-center gap-1">
+                        <a class="text-lg font-bold text-gray-900 px-3 py-2 -ml-3" asp-controller="Brand"
+                           asp-action="Index">
+                            <span class="text-indigo-600">ID</span>MS
+                        </a>
+                        <a class="text-sm font-medium text-gray-500 hover:text-gray-900 px-3 py-2 rounded-lg transition-colors"
+                           asp-controller="Brand" asp-action="Index">Brands</a>
+                        <a class="text-sm font-medium text-gray-500 hover:text-gray-900 px-3 py-2 rounded-lg transition-colors"
+                           asp-controller="Type" asp-action="Index">Types</a>
+                        <a class="text-sm font-medium text-gray-500 hover:text-gray-900 px-3 py-2 rounded-lg transition-colors"
+                           asp-controller="Model" asp-action="Index">Model</a>
+                        <a class="text-sm font-medium text-gray-500 hover:text-gray-900 px-3 py-2 rounded-lg transition-colors"
+                           asp-controller="Customer" asp-action="Index">Customer</a>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span
+                        class="text-sm text-gray-500">@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</span>
+                        <button onclick="handleLogout()"
+                                class="inline-flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-red-600 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
+                            Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    }
+
+    <main class="flex-1">
+        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+            @RenderBody()
+        </div>
+    </main>
+
+    <script>
+        async function handleLogout() {
+        try {
+        const res = await fetch('/Auth/Logout', { method: 'POST' });
+        window.location.href = '/Auth/Login';
+        } catch {
+        window.location.href = '/Auth/Login';
+        }
+        }
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+
+</html>

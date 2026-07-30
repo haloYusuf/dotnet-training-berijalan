@@ -24,7 +24,7 @@ public class ExceptionMiddleware
         }
         catch (Exception ex)
         {
-            if (ex is NotFoundException or BadRequestException or ConflictException)
+            if (ex is NotFoundException or BadRequestException or ConflictException or UnauthorizedException)
                 _logger.LogWarning("Validation error: {Message}", ex.Message);
             else
                 _logger.LogError(ex, "Unhandled exception");
@@ -40,12 +40,13 @@ public class ExceptionMiddleware
             NotFoundException => HttpStatusCode.NotFound,
             BadRequestException => HttpStatusCode.BadRequest,
             ConflictException => HttpStatusCode.Conflict,
+            UnauthorizedException => HttpStatusCode.Unauthorized,
             _ => HttpStatusCode.InternalServerError
         };
 
         var message = exception switch
         {
-            NotFoundException or BadRequestException or ConflictException => exception.Message,
+            NotFoundException or BadRequestException or ConflictException or UnauthorizedException => exception.Message,
             _ => "An internal server error occurred"
         };
 

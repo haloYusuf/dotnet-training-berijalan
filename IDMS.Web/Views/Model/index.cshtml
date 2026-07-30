@@ -1,0 +1,209 @@
+@{
+    ViewData["Title"] = "Model";
+}
+
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Model</h1>
+            <p class="text-sm text-gray-500 mt-1">Manage your vehicle Model and type relations</p>
+        </div>
+        <button onclick="openCreateModal()"
+                class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium shadow-sm transition-all">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Create Model
+        </button>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="p-4 border-b border-gray-100">
+            <div class="relative">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none"
+                     viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input type="text" id="searchInput" placeholder="Search types by name or code..."
+                       oninput="onSearchInput()"
+                       class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder:text-gray-400">
+                <button onclick="clearSearch()" id="clearBtn"
+                        class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 hidden">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="bg-gray-50/50">
+                        <th class="py-3.5 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            Type</th>
+                            <th class="py-3.5 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                Code</th>
+                                <th class="py-3.5 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    Name</th>
+                                    <th class="py-3.5 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                        Year</th>
+                                        <th class="py-3.5 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                            Price</th>
+                                            <th class="py-3.5 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                                Stock</th>
+                                                <th class="py-3.5 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                                    Status</th>
+                                                    <th class="py-3.5 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                                        Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="typeTableBody" class="divide-y divide-gray-50">
+                                                    <tr>
+                                                        <td colspan="6" class="py-16 text-center text-gray-400 text-sm">Loading...</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div id="pagination" class="hidden px-4 py-3 border-t border-gray-100 flex items-center justify-between"></div>
+                                    </div>
+                                </div>
+
+                                <!-- CREATE/EDIT MODAL -->
+                                <div id="modalOverlay" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden items-center justify-center z-50"
+                                     onclick="if(event.target===this)closeModal()">
+                                    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6 animate-modal">
+                                        <div class="flex items-center justify-between mb-6">
+                                            <h2 class="text-lg font-bold text-gray-900" id="modalTitle">Create Model</h2>
+                                            <button type="button" onclick="closeModal()"
+                                                    class="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100">
+                                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </div>
+
+                                        <input type="hidden" id="modelId">
+
+                                        <div class="space-y-4">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-1.5">Type <span
+                                                    class="text-red-500">*</span></label>
+                                                    <select id="typeId"
+                                                            class="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white">
+                                                        <option value="">Select a type...</option>
+                                                    </select>
+                                                </div>
+
+                                                <div class="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Code <span
+                                                            class="text-red-500">*</span></label>
+                                                            <input type="text" id="modelCode" maxlength="3"
+                                                                   class="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all uppercase"
+                                                                   placeholder="e.g. SUV">
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Year <span
+                                                                class="text-red-500">*</span></label>
+                                                                <input type="number" id="modelYear" min="1900"
+                                                                       class="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                                                                       placeholder="e.g. 2024">
+                                                            </div>
+                                                        </div>
+
+                                                        <div>
+                                                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Name <span
+                                                                class="text-red-500">*</span></label>
+                                                                <input type="text" id="modelName" maxlength="100"
+                                                                       class="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                                                                       placeholder="e.g. Sport Utility Vehicle"
+                                                                       onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();submitForm()}">
+                                                            </div>
+
+                                                            <div class="grid grid-cols-2 gap-4">
+                                                                <div>
+                                                                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Price <span
+                                                                        class="text-red-500">*</span></label>
+                                                                        <input type="number" id="modelPrice" step="any"
+                                                                               class="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all uppercase"
+                                                                               placeholder="e.g. 30000">
+                                                                    </div>
+                                                                    <div>
+                                                                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Stock <span
+                                                                            class="text-red-500">*</span></label>
+                                                                            <input type="number" id="modelStock" min="0"
+                                                                                   class="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                                                                                   placeholder="e.g. 1">
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                        
+
+                                                                <div id="modalError" class="hidden mt-4 bg-red-50 border border-red-200 rounded-lg p-3">
+                                                                    <p class="text-sm text-red-700" id="modalErrorText"></p>
+                                                                </div>
+
+                                                                <div class="flex gap-3 justify-end mt-6">
+                                                                    <button type="button" onclick="closeModal()"
+                                                                            class="px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Cancel</button>
+                                                                    <button type="button" onclick="submitForm()" id="saveBtn"
+                                                                            class="px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm">Save</button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- DELETE MODAL -->
+                                                        <div id="deleteModalOverlay"
+                                                             class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden items-center justify-center z-50"
+                                                             onclick="if(event.target===this)closeDeleteModal()">
+                                                            <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4 p-6 animate-modal">
+                                                                <div class="text-center">
+                                                                    <div class="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                                                                        <svg class="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                                                        </svg>
+                                                                    </div>
+                                                                    <h3 class="text-lg font-bold text-gray-900 mb-2">Delete Model</h3>
+                                                                    <p class="text-sm text-gray-500 mb-1">Are you sure you want to delete this model?</p>
+                                                                    <p class="text-sm text-gray-900 font-semibold" id="deleteModelInfo"></p>
+                                                                </div>
+
+                                                                <div id="deleteError" class="hidden mt-4 bg-red-50 border border-red-200 rounded-lg p-3">
+                                                                    <p class="text-sm text-red-700" id="deleteErrorText"></p>
+                                                                </div>
+
+                                                                <div class="flex gap-3 justify-center mt-6">
+                                                                    <button type="button" onclick="closeDeleteModal()"
+                                                                            class="px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Cancel</button>
+                                                                    <button type="button" onclick="confirmDelete()" id="confirmDeleteBtn"
+                                                                            class="px-4 py-2.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors shadow-sm">Delete</button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <style>
+                                                            @@keyframes modalIn {
+                                                                from {
+                                                                    opacity: 0;
+                                                                    transform: scale(0.95) translateY(10px);
+                                                                }
+
+                                                                to {
+                                                                    opacity: 1;
+                                                                    transform: scale(1) translateY(0);
+                                                                }
+                                                            }
+
+                                                            .animate-modal {
+                                                                animation: modalIn 0.2s ease-out;
+                                                            }
+                                                        </style>
+
+                                                        @section Scripts {
+                                                            <script src="~/js/model.js" asp-append-version="true"></script>
+                                                        }

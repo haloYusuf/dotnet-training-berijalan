@@ -9,6 +9,14 @@ public class AppDbContext : DbContext
 
     public DbSet<MstBrand> MstBrands => Set<MstBrand>();
 
+    public DbSet<MstType> MstTypes => Set<MstType>();
+
+    public DbSet<MstModel> MstModels => Set<MstModel>();
+
+    public DbSet<MstUser> MstUsers => Set<MstUser>();
+
+    public DbSet<MstCustomer> MstCustomers => Set<MstCustomer>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
