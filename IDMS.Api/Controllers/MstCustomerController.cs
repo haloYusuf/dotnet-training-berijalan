@@ -1,12 +1,14 @@
 using IDMS.Api.Helpers;
 using IDMS.Modules.Api.Master.Dto.Request.MstCustomer;
 using IDMS.Modules.Api.Master.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IDMS.Api.Controllers
 {
     [ApiController]
     [Route("api/customer")]
+    [Authorize]
     public class MstCustomerController : ControllerBase
     {
         private readonly IMstCustomerService _service;

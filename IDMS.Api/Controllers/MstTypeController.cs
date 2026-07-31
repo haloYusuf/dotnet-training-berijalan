@@ -1,12 +1,14 @@
 using IDMS.Api.Helpers;
 using IDMS.Modules.Api.Master.Dto.Request.MstType;
 using IDMS.Modules.Api.Master.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IDMS.Api.Controllers
 {
     [ApiController]
     [Route("api/type")]
+    [Authorize]
     public class MstTypeController : ControllerBase
     {
         private readonly IMstTypeService _service;

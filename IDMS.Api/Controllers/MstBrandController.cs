@@ -6,9 +6,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace IDMS.Api.Controllers;
 
+
+// [Authorize(Roles = "customer")]
 [ApiController]
 [Route("api/brand")]
-[Authorize(Roles = "customer")]
+[Authorize]
 public class MstBrandController : ControllerBase
 {
     private readonly IMstBrandService _service;
