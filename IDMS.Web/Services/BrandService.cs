@@ -25,7 +25,7 @@ namespace IDMS.Web.Services
                     ["Limit"] = limit.ToString()
                 };
                 if (!string.IsNullOrEmpty(search))
-                    query["Search"] = search;
+                    query["Keyword"] = search;
 
                 var result = await _api.GetAsync<List<BrandItem>>("/api/brand", query);
 

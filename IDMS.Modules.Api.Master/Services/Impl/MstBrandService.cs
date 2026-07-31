@@ -24,9 +24,9 @@ public class MstBrandService : IMstBrandService
     {
         var query = _db.MstBrands.AsNoTracking();
 
-        if (!string.IsNullOrWhiteSpace(request.Search))
+        if (!string.IsNullOrWhiteSpace(request.Keyword))
         {
-            var search = request.Search.ToLower();
+            var search = request.Keyword.ToLower();
             query = query.Where(e =>
                 e.Code.ToLower().Contains(search) ||
                 e.Name.ToLower().Contains(search));

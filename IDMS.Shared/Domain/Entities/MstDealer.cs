@@ -16,8 +16,7 @@ namespace IDMS.Shared.Domain.Entities
         [Required]
         public string Name { get; set; } = null!;
 
-        [Required]
-        public string Address { get; set; } = null!;
+        public string? Address { get; set; } = null!;
 
         [Required]
         public string City { get; set; } = null!;
@@ -26,9 +25,9 @@ namespace IDMS.Shared.Domain.Entities
         public string Region { get; set; } = null!;
 
         [MaxLength(15)]
-        public string Phone { get; set; } = null!;
+        public string? Phone { get; set; } = null!;
 
         [MaxLength(50)]
-        public string Email { get; set; } = null!;
+        public string? Email { get; set; } = null!;
     }
 }
