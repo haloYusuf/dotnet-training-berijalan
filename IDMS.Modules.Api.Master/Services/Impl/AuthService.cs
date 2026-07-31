@@ -1,13 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
 using IDMS.Infrastructure.Data;
-using IDMS.Modules.Api.Master.Dto.Request;
+using IDMS.Modules.Api.Master.Dto.Request.Auth;
 using IDMS.Modules.Api.Master.Dto.Response;
 using IDMS.Shared.Domain.Entities;
 using IDMS.Shared.Exceptions;
@@ -54,6 +49,7 @@ namespace IDMS.Modules.Api.Master.Services.Impl
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Role, user.Role),
                 new Claim("FullName", user.FullName)
             };
 
@@ -70,7 +66,7 @@ namespace IDMS.Modules.Api.Master.Services.Impl
 
         public async Task<bool> registerAsync(ReqMstUserCreateDto req)
         {
-            if (await _db.MstUsers.AnyAsync(e => e.Email == req.Email))
+            if (await _db.MstUsers.AnyAsync(e => e.Email == req.Email && e.IsActive))
             {
                 throw new BadRequestException("Email already registered");
             }
@@ -79,7 +75,8 @@ namespace IDMS.Modules.Api.Master.Services.Impl
             {
                 Email = req.Email,
                 Password = BCrypt.Net.BCrypt.HashPassword(req.Password),
-                FullName = req.FullName
+                FullName = req.FullName,
+                IsActive = true,
             };
 
             _db.MstUsers.Add(user);

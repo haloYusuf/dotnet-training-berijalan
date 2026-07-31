@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Query.Expressions.Internal;
 
-namespace IDMS.Modules.Api.Master.Dto.Request
+namespace IDMS.Modules.Api.Master.Dto.Request.Auth
 {
     public class ReqLoginDto
     {

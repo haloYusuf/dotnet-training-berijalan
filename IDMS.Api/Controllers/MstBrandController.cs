@@ -1,5 +1,5 @@
 using IDMS.Api.Helpers;
-using IDMS.Modules.Api.Master.Dto.Request;
+using IDMS.Modules.Api.Master.Dto.Request.MstBrand;
 using IDMS.Modules.Api.Master.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -8,7 +8,7 @@ namespace IDMS.Api.Controllers;
 
 [ApiController]
 [Route("api/brand")]
-[Authorize]
+[Authorize(Roles = "customer")]
 public class MstBrandController : ControllerBase
 {
     private readonly IMstBrandService _service;

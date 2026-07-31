@@ -1,4 +1,4 @@
-using IDMS.Modules.Api.Master.Dto.Request;
+using IDMS.Modules.Api.Master.Dto.Request.MstBrand;
 using IDMS.Modules.Api.Master.Dto.Response;
 
 namespace IDMS.Modules.Api.Master.Services;

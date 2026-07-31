@@ -1,8 +1,9 @@
 using IDMS.Infrastructure.Data;
-using IDMS.Modules.Api.Master.Dto.Request;
+using IDMS.Modules.Api.Master.Dto.Request.MstBrand;
 using IDMS.Modules.Api.Master.Dto.Response;
 using IDMS.Shared.Domain.Entities;
 using IDMS.Shared.Exceptions;
+using IDMS.Shared.Utils;
 using Microsoft.EntityFrameworkCore;
 
 namespace IDMS.Modules.Api.Master.Services.Impl;
@@ -11,9 +12,12 @@ public class MstBrandService : IMstBrandService
 {
     private readonly AppDbContext _db;
 
-    public MstBrandService(AppDbContext db)
+    private readonly ICurrentUserServices _user;
+
+    public MstBrandService(AppDbContext db, ICurrentUserServices user)
     {
         _db = db;
+        _user = user;
     }
 
     public async Task<(List<ResMstBrandDto> Data, int Total)> GetListAsync(ReqMstBrandDto request)
@@ -58,8 +62,8 @@ public class MstBrandService : IMstBrandService
             Code = request.Code,
             Name = request.Name,
             IsActive = true,
-            CreatedBy = "Admin1",
-            CreatedAt = DateTime.UtcNow
+            CreatedBy = _user.GetFullName(),
+            CreatedAt = DateTime.UtcNow,
         };
 
         _db.MstBrands.Add(entity);
@@ -85,7 +89,7 @@ public class MstBrandService : IMstBrandService
 
         brand.Code = request.Code;
         brand.Name = request.Name;
-        brand.UpdatedBy = "Admin";
+        brand.UpdatedBy = _user.GetFullName();
         brand.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync();
@@ -106,7 +110,7 @@ public class MstBrandService : IMstBrandService
             throw new NotFoundException($"Brand with id {id} not found");
 
         entity.DeletedAt = DateTime.UtcNow;
-        entity.DeletedBy = "Admin2";
+        entity.DeletedBy = _user.GetFullName();
 
         await _db.SaveChangesAsync();
     }

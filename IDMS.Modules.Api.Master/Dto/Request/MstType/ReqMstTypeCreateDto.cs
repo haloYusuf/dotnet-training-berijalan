@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace IDMS.Modules.Api.Master.Dto.Request
+namespace IDMS.Modules.Api.Master.Dto.Request.MstType
 {
     public class ReqMstTypeCreateDto
     {

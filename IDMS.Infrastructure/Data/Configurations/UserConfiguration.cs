@@ -20,6 +20,8 @@ namespace IDMS.Infrastructure.Data.Configurations
             builder.Property(u => u.Email).HasColumnName("email");
             builder.Property(u => u.Password).HasColumnName("password");
             builder.Property(u => u.FullName).HasColumnName("full_name");
+            builder.Property(u => u.FullName).HasColumnName("full_name");
+            builder.Property(u => u.Role).HasMaxLength(10).HasColumnName("role");
         }
     }
 }

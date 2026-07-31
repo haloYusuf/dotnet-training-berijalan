@@ -5,6 +5,7 @@ using IDMS.Modules.Api.Master.Services;
 using IDMS.Modules.Api.Master.Services.Impl;
 using IDMS.Shared.Common;
 using IDMS.Shared.Exceptions;
+using IDMS.Shared.Utils;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -49,6 +50,9 @@ builder.Services.AddScoped<IMstTypeService, MstTypeService>();
 builder.Services.AddScoped<IMstModelService, MstModelService>();
 builder.Services.AddScoped<IMstCustomerService, MstCustomerService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ICurrentUserServices, CurrentUserServices>();
+
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddControllers().ConfigureApiBehaviorOptions(options =>
 {
@@ -88,6 +92,10 @@ builder.Services.AddAuthentication().AddJwtBearer(options =>
         OnChallenge = context =>
         {
             throw new UnauthorizedException("Unauthorized");
+        },
+        OnForbidden = context =>
+        {
+            throw new ForbiddenException("Forbidden");
         }
     };
 });

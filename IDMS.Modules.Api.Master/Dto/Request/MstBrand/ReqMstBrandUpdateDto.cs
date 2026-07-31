@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace IDMS.Modules.Api.Master.Dto.Request;
+namespace IDMS.Modules.Api.Master.Dto.Request.MstBrand;
 
 public class ReqMstBrandUpdateDto
 {

@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace IDMS.Modules.Api.Master.Dto.Request
+namespace IDMS.Modules.Api.Master.Dto.Request.Auth
 {
-    public class ReqMstModelUpdateDto : ReqMstModelCreateDto
+    public class ReqMstUserUpdateDto : ReqMstUserCreateDto
     {
         public bool IsActive { get; set; }
     }

@@ -1,11 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using IDMS.Infrastructure.Data;
-using IDMS.Modules.Api.Master.Dto.Request;
+using IDMS.Modules.Api.Master.Dto.Request.MstType;
 using IDMS.Modules.Api.Master.Dto.Response;
-using IDMS.Shared.Common;
 using IDMS.Shared.Domain.Entities;
 using IDMS.Shared.Exceptions;
 using Microsoft.EntityFrameworkCore;

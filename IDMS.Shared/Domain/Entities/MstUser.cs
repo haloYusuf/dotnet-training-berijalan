@@ -14,5 +14,6 @@ namespace IDMS.Shared.Domain.Entities
         public string Password { get; set; } = null!;
 
         public string FullName { get; set; } = null!;
+        public string Role { get; set; } = "customer";
     }
 }

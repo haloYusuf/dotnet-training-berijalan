@@ -1,9 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using IDMS.Api.Helpers;
-using IDMS.Modules.Api.Master.Dto.Request;
+using IDMS.Modules.Api.Master.Dto.Request.MstType;
 using IDMS.Modules.Api.Master.Services;
 using Microsoft.AspNetCore.Mvc;
 
