@@ -163,7 +163,7 @@ namespace IDMS.Modules.Api.Master.Services.Impl
 
         public async Task<ResTrnVehicleDeliveryDto> UpdateAsync(int id, ReqTrnVehicleDeliveryUpdateDto request)
         {
-            var entity = await _context.Set<TrnVehicleDelivery>().FirstOrDefaultAsync(x => x.Id == id && x.DeletedAt == null) ?? throw new NotFoundException("Dealer not found");
+            var entity = await _context.Set<TrnVehicleDelivery>().FirstOrDefaultAsync(x => x.Id == id && x.DeletedAt == null) ?? throw new NotFoundException("Data not found");
 
             entity.ApplicationId = request.ApplicationId;
             entity.DealerId = request.DealerId;
@@ -197,7 +197,7 @@ namespace IDMS.Modules.Api.Master.Services.Impl
 
         public async Task<ResTrnVehicleDeliveryDto> UpdateStatusAsync(int id, string status)
         {
-            var entity = await _context.Set<TrnVehicleDelivery>().FirstOrDefaultAsync(x => x.Id == id && x.DeletedAt == null) ?? throw new NotFoundException("Dealer not found");
+            var entity = await _context.Set<TrnVehicleDelivery>().FirstOrDefaultAsync(x => x.Id == id && x.DeletedAt == null) ?? throw new NotFoundException("Data not found");
 
             entity.Status = status;
             entity.UpdatedAt = DateTime.UtcNow;
