@@ -28,6 +28,13 @@ builder.Services.AddScoped<ITypeService, TypeService>();
 builder.Services.AddScoped<IModelService, ModelService>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 
+builder.Services.AddScoped<IDealerService, DealerService>();
+builder.Services.AddScoped<IInsuranceService, InsuranceService>();
+
+
+builder.Services.AddScoped<IApplicationService, ApplicationService>();
+builder.Services.AddScoped<IVehicleDeliveryService, VehicleDeliveryService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

@@ -60,28 +60,21 @@ namespace IDMS.Modules.Api.Master.Services.Impl
             _context.TrnApplications.Add(entity);
             await _context.SaveChangesAsync();
 
-            return new ResTrnApplicationDto
-            {
-                Id = entity.Id,
-                ApplicationNo = entity.ApplicationNo,
-                CustomerName = entity.Customer.FullName,
-                ModelName = entity.Model.Name,
-                OtrPrice = entity.OtrPrice,
-                DpAmount = entity.DpAmount,
-                TenorMonth = entity.TenorMonth,
-                InterestRate = entity.InterestRate,
-                Status = entity.Status,
-                IsActive = entity.IsActive,
-            };
+            return await GetApplicationByIdAsync(entity.Id) ?? throw new NotFoundException("Data gagal dimuat");
         }
 
         public async Task<ResTrnApplicationDto?> GetApplicationByIdAsync(int id)
         {
-            var data = await _context.TrnApplications.AsNoTracking()
+            var data = await _context.TrnApplications
+            .Include(x => x.Customer)
+            .Include(x => x.Model)
+            .AsNoTracking()
             .Where(v => v.Id == id && v.DeletedAt == null)
             .Select(v => new ResTrnApplicationDto
             {
                 Id = v.Id,
+                CustomerId = v.Customer.Id,
+                ModelId = v.Model.Id,
                 ApplicationNo = v.ApplicationNo,
                 CustomerName = v.Customer.FullName,
                 ModelName = v.Model.Name,
@@ -100,6 +93,8 @@ namespace IDMS.Modules.Api.Master.Services.Impl
         public async Task<(IEnumerable<ResTrnApplicationDto> data, int total)> GetListAsync(ReqTrnApplicationDto request)
         {
             var query = _context.Set<TrnApplication>()
+            .Include(x => x.Customer)
+            .Include(x => x.Model)
             .Where(x => x.DeletedAt == null).AsQueryable();
 
             if (!string.IsNullOrEmpty(request.Keyword))
@@ -118,6 +113,8 @@ namespace IDMS.Modules.Api.Master.Services.Impl
             .Select(v => new ResTrnApplicationDto
             {
                 Id = v.Id,
+                CustomerId = v.Customer.Id,
+                ModelId = v.Model.Id,
                 ApplicationNo = v.ApplicationNo,
                 CustomerName = v.Customer.FullName,
                 ModelName = v.Model.Name,
@@ -161,19 +158,7 @@ namespace IDMS.Modules.Api.Master.Services.Impl
 
             await _context.SaveChangesAsync();
 
-            return new ResTrnApplicationDto
-            {
-                Id = entity.Id,
-                ApplicationNo = entity.ApplicationNo,
-                CustomerName = entity.Customer.FullName,
-                ModelName = entity.Model.Name,
-                OtrPrice = entity.OtrPrice,
-                DpAmount = entity.DpAmount,
-                TenorMonth = entity.TenorMonth,
-                InterestRate = entity.InterestRate,
-                Status = entity.Status,
-                IsActive = entity.IsActive,
-            };
+            return await GetApplicationByIdAsync(entity.Id) ?? throw new NotFoundException("Data gagal dimuat setelah diperbarui");
         }
 
         public async Task<ResTrnApplicationDto> UpdateStatusAsync(int id, string status)
@@ -186,19 +171,7 @@ namespace IDMS.Modules.Api.Master.Services.Impl
 
             await _context.SaveChangesAsync();
 
-            return new ResTrnApplicationDto
-            {
-                Id = entity.Id,
-                ApplicationNo = entity.ApplicationNo,
-                CustomerName = entity.Customer.FullName,
-                ModelName = entity.Model.Name,
-                OtrPrice = entity.OtrPrice,
-                DpAmount = entity.DpAmount,
-                TenorMonth = entity.TenorMonth,
-                InterestRate = entity.InterestRate,
-                Status = entity.Status,
-                IsActive = entity.IsActive,
-            };
+            return await GetApplicationByIdAsync(entity.Id) ?? throw new NotFoundException("Data gagal dimuat setelah diperbarui");
         }
     }
 }

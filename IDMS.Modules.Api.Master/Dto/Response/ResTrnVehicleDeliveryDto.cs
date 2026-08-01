@@ -8,6 +8,9 @@ namespace IDMS.Modules.Api.Master.Dto.Response
     public class ResTrnVehicleDeliveryDto
     {
         public int Id { get; set; }
+        public int DealerId { get; set; }
+        public int InsuranceId { get; set; }
+        public int ApplicationId { get; set; }
         public string DeliveryNo { get; set; } = string.Empty;
         public string DealerName { get; set; } = string.Empty;
         public string InsuranceName { get; set; } = string.Empty;

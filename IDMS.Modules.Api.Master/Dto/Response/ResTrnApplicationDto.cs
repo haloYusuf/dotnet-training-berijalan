@@ -8,6 +8,8 @@ namespace IDMS.Modules.Api.Master.Dto.Response
     public class ResTrnApplicationDto
     {
         public int Id { get; set; }
+        public int CustomerId { get; set; }
+        public int ModelId { get; set; }
         public string ApplicationNo { get; set; } = string.Empty;
         public string CustomerName { get; set; } = string.Empty;
         public string ModelName { get; set; } = string.Empty;

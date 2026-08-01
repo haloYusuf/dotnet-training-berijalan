@@ -26,7 +26,7 @@ namespace IDMS.Modules.Api.Master.Services.Impl
 
         private async Task<string> GenerateDeliveryNoAsync()
         {
-            var today = DateTime.UtcNow.Date;
+            var today = DateTime.UtcNow.ToLocalTime().Date;
             var dateString = today.ToString("yyyyMMdd");
 
             var todayCount = await _context.TrnVehicleDeliveries
@@ -40,13 +40,15 @@ namespace IDMS.Modules.Api.Master.Services.Impl
 
         public async Task<ResTrnVehicleDeliveryDto> CreateAsync(ReqTrnVehicleDeliveryCreateDto request)
         {
-            var isAppValid = await _context.Set<TrnVehicleDelivery>().AnyAsync(x => x.ApplicationId == request.ApplicationId && x.Application.Status == "APPROVED");
+            var isAppValid = await _context.Set<TrnVehicleDelivery>().AnyAsync(x => x.ApplicationId == request.ApplicationId && !x.Application.Status.Equals("APPROVED") && x.DeletedAt == null);
             if (isAppValid)
             {
                 throw new ConflictException("Application Status is not valid");
             }
 
-            var isStatusValid = await _context.Set<TrnVehicleDelivery>().AnyAsync(x => x.ApplicationId == request.ApplicationId && x.Status == request.Status && (request.Status.Equals("PLANNED") || request.Status.Equals("IN_TRANSIT")));
+            var isStatusValid = await _context.Set<TrnVehicleDelivery>()
+            .Include(x => x.Application)
+            .AnyAsync(x => x.ApplicationId == request.ApplicationId && x.Status == request.Status && (request.Status.Equals("PLANNED") || request.Status.Equals("IN_TRANSIT")) && x.DeletedAt == null);
             if (isStatusValid)
             {
                 throw new ConflictException("An entry for this application with the same status has already been recorded.");
@@ -73,25 +75,15 @@ namespace IDMS.Modules.Api.Master.Services.Impl
             _context.TrnVehicleDeliveries.Add(entity);
             await _context.SaveChangesAsync();
 
-            return new ResTrnVehicleDeliveryDto
-            {
-                Id = entity.Id,
-                DeliveryNo = entity.DeliveryNo,
-                DealerName = entity.Dealer.Name,
-                InsuranceName = entity.Insurance.Name,
-                DeliveryDate = entity.DeliveryDate,
-                DriverName = entity.DriverName,
-                DriverPhone = entity.DriverPhone,
-                PlatNumber = entity.PlatNumber,
-                Status = entity.Status,
-                Notes = entity.Notes,
-                IsActive = entity.IsActive,
-            };
+            return await GetVehicleDeliveryByIdAsync(entity.Id) ?? throw new NotFoundException("Data gagal dimuat");
         }
 
         public async Task<(IEnumerable<ResTrnVehicleDeliveryDto> data, int total)> GetListAsync(ReqTrnVehicleDeliveryDto request)
         {
             var query = _context.Set<TrnVehicleDelivery>()
+            .Include(x => x.Dealer)
+            .Include(x => x.Insurance)
+            .Include(x => x.Application)
             .Where(x => x.DeletedAt == null).AsQueryable();
 
             if (!string.IsNullOrEmpty(request.Keyword))
@@ -110,6 +102,9 @@ namespace IDMS.Modules.Api.Master.Services.Impl
             .Select(v => new ResTrnVehicleDeliveryDto
             {
                 Id = v.Id,
+                DealerId = v.DealerId,
+                InsuranceId = v.InsuranceId,
+                ApplicationId = v.ApplicationId,
                 DeliveryNo = v.DeliveryNo,
                 DealerName = v.Dealer.Name,
                 InsuranceName = v.Insurance.Name,
@@ -127,11 +122,18 @@ namespace IDMS.Modules.Api.Master.Services.Impl
 
         public async Task<ResTrnVehicleDeliveryDto?> GetVehicleDeliveryByIdAsync(int id)
         {
-            var data = await _context.TrnVehicleDeliveries.AsNoTracking()
+            var data = await _context.TrnVehicleDeliveries
+            .Include(x => x.Dealer)
+            .Include(x => x.Insurance)
+            .Include(x => x.Application)
+            .AsNoTracking()
             .Where(v => v.Id == id && v.DeletedAt == null)
             .Select(v => new ResTrnVehicleDeliveryDto
             {
                 Id = v.Id,
+                DealerId = v.DealerId,
+                InsuranceId = v.InsuranceId,
+                ApplicationId = v.ApplicationId,
                 DeliveryNo = v.DeliveryNo,
                 DealerName = v.Dealer.Name,
                 InsuranceName = v.Insurance.Name,
@@ -163,6 +165,21 @@ namespace IDMS.Modules.Api.Master.Services.Impl
 
         public async Task<ResTrnVehicleDeliveryDto> UpdateAsync(int id, ReqTrnVehicleDeliveryUpdateDto request)
         {
+            var isStatusValid = await _context.Set<TrnVehicleDelivery>()
+            .Include(x => x.Application)
+            .AnyAsync(x => x.ApplicationId == request.ApplicationId && !x.Application.Status.Equals("APPROVED") && x.DeletedAt == null);
+            if (isStatusValid)
+            {
+                throw new ConflictException("Application Status is not valid");
+            }
+
+            var isAnyData = await _context.Set<TrnVehicleDelivery>()
+            .Include(x => x.Application)
+            .AnyAsync(x => x.Id != id && x.Status == request.Status && x.ApplicationId == request.ApplicationId && (!x.Status.Equals("DELIVERED") || !x.Status.Equals("CANCELLED")) && x.DeletedAt == null);
+            if (isAnyData)
+            {
+                throw new ConflictException("An entry for this application with the same status has already been recorded.");
+            }
             var entity = await _context.Set<TrnVehicleDelivery>().FirstOrDefaultAsync(x => x.Id == id && x.DeletedAt == null) ?? throw new NotFoundException("Data not found");
 
             entity.ApplicationId = request.ApplicationId;
@@ -179,25 +196,20 @@ namespace IDMS.Modules.Api.Master.Services.Impl
 
             await _context.SaveChangesAsync();
 
-            return new ResTrnVehicleDeliveryDto
-            {
-                Id = entity.Id,
-                DeliveryNo = entity.DeliveryNo,
-                DealerName = entity.Dealer.Name,
-                InsuranceName = entity.Insurance.Name,
-                DeliveryDate = entity.DeliveryDate,
-                DriverName = entity.DriverName,
-                DriverPhone = entity.DriverPhone,
-                PlatNumber = entity.PlatNumber,
-                Status = entity.Status,
-                Notes = entity.Notes,
-                IsActive = entity.IsActive,
-            };
+            return await GetVehicleDeliveryByIdAsync(entity.Id) ?? throw new NotFoundException("Data gagal dimuat");
         }
 
         public async Task<ResTrnVehicleDeliveryDto> UpdateStatusAsync(int id, string status)
         {
             var entity = await _context.Set<TrnVehicleDelivery>().FirstOrDefaultAsync(x => x.Id == id && x.DeletedAt == null) ?? throw new NotFoundException("Data not found");
+
+            var isAnyData = await _context.Set<TrnVehicleDelivery>()
+            .Include(x => x.Application)
+            .AnyAsync(x => x.Id != id && x.Status == status && x.ApplicationId == entity.ApplicationId && !x.Status.Equals("DELIVERED") && !x.Status.Equals("CANCELLED") && x.DeletedAt == null);
+            if (isAnyData)
+            {
+                throw new ConflictException("An entry for this application with the same status has already been recorded.");
+            }
 
             entity.Status = status;
             entity.UpdatedAt = DateTime.UtcNow;
@@ -205,20 +217,7 @@ namespace IDMS.Modules.Api.Master.Services.Impl
 
             await _context.SaveChangesAsync();
 
-            return new ResTrnVehicleDeliveryDto
-            {
-                Id = entity.Id,
-                DeliveryNo = entity.DeliveryNo,
-                DealerName = entity.Dealer.Name,
-                InsuranceName = entity.Insurance.Name,
-                DeliveryDate = entity.DeliveryDate,
-                DriverName = entity.DriverName,
-                DriverPhone = entity.DriverPhone,
-                PlatNumber = entity.PlatNumber,
-                Status = entity.Status,
-                Notes = entity.Notes,
-                IsActive = entity.IsActive,
-            };
+            return await GetVehicleDeliveryByIdAsync(entity.Id) ?? throw new NotFoundException("Data gagal dimuat");
         }
     }
 }
