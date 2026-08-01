@@ -1,313 +1,259 @@
-let state = {
-    page: 1,
-    search: '',
-    limit: 10
-};
-
-let searchTimeout = null;
-let isLoading = false;
-
-const $ = id => document.getElementById(id);
-const html = (str, ctx) => str.replace(/\$\{(\w+)\}/g, (_, k) => ctx[k] ?? '');
-
-function debounce(fn, ms) {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(fn, ms);
-}
-
-function showToast(message, type = 'error') {
-    const toast = document.createElement('div');
-    const colors = {
-        error: 'bg-red-500',
-        success: 'bg-emerald-500',
-        warning: 'bg-amber-500'
+const brandController = (function () {
+    let state = {
+        keyword: '',
+        page: 1,
     };
-    toast.className = `fixed top-4 right-4 z-50 ${colors[type]} text-white px-5 py-3 rounded-lg shadow-lg text-sm font-medium transition-all duration-300 translate-y-0 opacity-0`;
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    requestAnimationFrame(() => toast.classList.remove('opacity-0'));
-    setTimeout(() => {
-        toast.classList.add('opacity-0');
-        setTimeout(() => toast.remove(), 300);
-    }, 4000);
-}
 
-function showSkeleton() {
-    $('brandTableBody').innerHTML = Array.from({ length: 5 }, () => `
-        <tr class="border-b border-gray-100">
-            <td class="py-3 px-4"><div class="h-4 bg-gray-200 rounded w-12 animate-pulse"></div></td>
-            <td class="py-3 px-4"><div class="h-4 bg-gray-200 rounded w-48 animate-pulse"></div></td>
-            <td class="py-3 px-4"><div class="h-5 bg-gray-200 rounded-full w-16 animate-pulse"></div></td>
-            <td class="py-3 px-4"><div class="h-4 bg-gray-200 rounded w-24 animate-pulse"></div></td>
-        </tr>
-    `).join('');
-}
+    // DOM Elements
+    let tbody, form, modalEl, searchInput, paginationContainer;
 
-async function loadBrands() {
-    if (isLoading) return;
-    isLoading = true;
+    function init() {
+        tbody = document.getElementById('brandTableBody');
+        form = document.getElementById('brandForm');
+        modalEl = document.getElementById('brandModal');
+        searchInput = document.getElementById('searchInput');
+        paginationContainer = document.getElementById('paginationContainer'); // Tangkap elemen pagination
 
-    state.search = $('searchInput').value;
-    $('pagination').classList.add('hidden');
-    showSkeleton();
+        loadData();
 
-    try {
-        const params = new URLSearchParams({ search: state.search, page: state.page, limit: state.limit });
-        const res = await fetch(`/Brand/List?${params}`);
-        const json = await res.json();
+        searchInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') search();
+        });
+    }
 
-        if (!res.ok || json.status === 'Error') {
-            if (res.status === 401) return window.location.href = '/Auth/Login';
-            showToast(json.message || `Server error (${res.status})`);
-            $('brandTableBody').innerHTML = `<tr><td colspan="4" class="py-16 text-center text-gray-400 text-sm">Failed to load data</td></tr>`;
+    async function webCall(url, method = 'GET', data = null) {
+        const options = {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        };
+
+        if (data) {
+            options.body = JSON.stringify(data);
+        }
+
+        const response = await fetch(url, options);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (result.status === "Error") {
+            throw new Error(result.message);
+        }
+
+        return result;
+    }
+
+    async function loadData() {
+        tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-sm text-gray-500">Memuat data...</td></tr>';
+
+        const queryUrl = `/Brand/List?search=${encodeURIComponent(state.keyword)}&page=${state.page}&limit=${state.limit}`;
+
+        try {
+            const response = await webCall(queryUrl);
+            // Render Tabel
+            renderTable(response.data);
+
+            // Render Paginasi dari data response.pagination
+            renderPagination(response.pagination);
+        } catch (error) {
+            console.error("Gagal memuat data:", error);
+            tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-sm text-red-500">Terjadi kesalahan saat memuat data.</td></tr>';
+            paginationContainer.classList.add('hidden');
+        }
+    }
+
+    function renderTable(data) {
+        tbody.innerHTML = '';
+
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-sm text-gray-500">Tidak ada data ditemukan.</td></tr>';
             return;
         }
 
-        const items = json.data;
-        if (!items?.length) {
-            $('brandTableBody').innerHTML = `<tr><td colspan="4" class="py-16 text-center text-gray-400 text-sm">
-                <div class="flex flex-col items-center gap-2">
-                    <svg class="w-10 h-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
-                    <span>${state.search ? `No brands matching "${state.search}"` : 'No brands yet'}</span>
-                </div>
-            </td></tr>`;
-        } else {
-            $('brandTableBody').innerHTML = items.map(item => `
-                <tr class="border-b border-gray-50 hover:bg-gray-50/80 transition-colors">
-                    <td class="py-3.5 px-4"><span class="font-mono text-sm font-medium text-gray-900">${esc(item.code)}</span></td>
-                    <td class="py-3.5 px-4 text-gray-700">${esc(item.name)}</td>
-                    <td class="py-3.5 px-4">${item.isActive
-                    ? '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Active</span>'
-                    : '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20"><span class="w-1.5 h-1.5 rounded-full bg-red-400"></span>Inactive</span>'}
-                    </td>
-                    <td class="py-3.5 px-4">
-                        <button onclick="editBrand(${item.id})" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm mr-2 transition-colors">Edit</button>
-                        <button onclick="deleteBrand(${item.id})" class="text-red-500 hover:text-red-700 font-medium text-sm transition-colors">Delete</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
+        data.forEach((item, index) => {
 
-        renderPagination(json.pagination);
-    } catch {
-        showToast('Network error. Please check your connection.');
-        $('brandTableBody').innerHTML = `<tr><td colspan="4" class="py-16 text-center text-gray-400 text-sm">Connection failed</td></tr>`;
-    } finally {
-        isLoading = false;
-    }
-}
-
-function renderPagination(p) {
-    const el = $('pagination');
-    if (!p || p.totalPages <= 1) return el.classList.add('hidden');
-    el.classList.remove('hidden');
-
-    const pages = [];
-    for (let i = 1; i <= p.totalPages; i++) pages.push(i);
-
-    el.innerHTML = `
-        <div class="text-sm text-gray-500">
-            Page <span class="font-medium text-gray-700">${p.currentPage}</span> of <span class="font-medium text-gray-700">${p.totalPages}</span>
-            &middot; ${p.totalItems} items
-        </div>
-        <div class="flex items-center gap-1">
-            <button onclick="goToPage(${p.currentPage - 1})" ${p.hasPreviousPage ? '' : 'disabled'}
-                class="px-2.5 py-1.5 rounded-md text-sm font-medium transition-colors ${p.hasPreviousPage ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-300 cursor-not-allowed'}">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-            </button>
-            ${pages.map(i => `
-                <button onclick="goToPage(${i})"
-                    class="w-8 h-8 rounded-md text-sm font-medium transition-colors ${i === p.currentPage ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'}">${i}</button>
-            `).join('')}
-            <button onclick="goToPage(${p.currentPage + 1})" ${p.hasNextPage ? '' : 'disabled'}
-                class="px-2.5 py-1.5 rounded-md text-sm font-medium transition-colors ${p.hasNextPage ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-300 cursor-not-allowed'}">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-            </button>
-        </div>`;
-}
-
-function goToPage(page) {
-    state.page = page;
-    loadBrands();
-}
-
-function onSearchInput() {
-    state.page = 1;
-    debounce(loadBrands, 300);
-}
-
-function clearSearch() {
-    $('searchInput').value = '';
-    state.page = 1;
-    loadBrands();
-}
-
-function esc(str) {
-    const d = document.createElement('div');
-    d.textContent = str;
-    return d.innerHTML;
-}
-
-function openModal(title, data = null) {
-    hideModalError();
-
-    const modal = $('modalOverlay');
-    $('modalTitle').textContent = title;
-    $('brandId').value = data?.id ?? '';
-    $('brandCode').value = data?.code ?? '';
-    $('brandName').value = data?.name ?? '';
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    setTimeout(() => $('brandCode').focus(), 100);
-}
-
-function closeModal() {
-    $('modalOverlay').classList.add('hidden');
-    $('modalOverlay').classList.remove('flex');
-    hideModalError();
-}
-
-function showModalError(msg) {
-    const el = $('modalError');
-    $('modalErrorText').textContent = msg;
-    el.classList.remove('hidden');
-}
-
-function hideModalError() {
-    $('modalError').classList.add('hidden');
-}
-
-function openCreateModal() {
-    openModal('Create Brand');
-}
-
-async function editBrand(id) {
-    try {
-        const res = await fetch(`/Brand/Detail/${id}`);
-        if (!res.ok) {
-            if (res.status === 401) return window.location.href = '/Auth/Login';
-            const err = await res.json().catch(() => ({}));
-            return showToast(err.message || `Server error (${res.status})`);
-        }
-        const json = await res.json();
-        if (json.status === 'Error') return showToast(json.message);
-        openModal('Edit Brand', json.data);
-    } catch {
-        showToast('Network error');
-    }
-}
-
-let isSubmitting = false;
-
-async function submitForm() {
-    if (isSubmitting) return;
-    hideModalError();
-
-    const id = $('brandId').value;
-    const code = $('brandCode').value.trim();
-    const name = $('brandName').value.trim();
-
-    if (!code) return showModalError('Code is required'), $('brandCode').focus();
-    if (code.length > 3) return showModalError('Code cannot exceed 3 characters');
-    if (!name) return showModalError('Name is required'), $('brandName').focus();
-
-    const isEdit = !!id;
-    const url = isEdit ? `/Brand/Update/${id}` : '/Brand/Create';
-    const method = isEdit ? 'PUT' : 'POST';
-    const btn = $('saveBtn');
-    const originalText = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = 'Saving...';
-    isSubmitting = true;
-
-    try {
-        const res = await fetch(url, {
-            method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code, name })
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 uppercase">
+                        ${item.code}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">${item.name}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                    <button onclick="brandController.showEditModal(${item.id})" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded-md mr-2 transition-colors">Edit</button>
+                    <button onclick="brandController.deleteData(${item.id})" class="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-md transition-colors">Hapus</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
         });
+    }
 
-        const json = await res.json();
+    // FUNGSI BARU: Render UI Paginasi
+    function renderPagination(pagination) {
+        // Karena .NET sering men-serialize JSON menjadi CamelCase, kita pakai opsi fallback
+        const totalPages = pagination?.totalPages || pagination?.TotalPages || 0;
+        const currentPage = pagination?.currentPage || pagination?.CurrentPage || state.page;
+        const totalItems = pagination?.totalItems || pagination?.TotalItems || 0;
 
-        if (!res.ok || json.status === 'Error') {
-            btn.disabled = false;
-            btn.textContent = originalText;
-            isSubmitting = false;
-            return showModalError(json.message || `Server error (${res.status})`);
+        // Jika data sedikit / hanya 1 halaman, sembunyikan kotak pagination
+        if (totalPages <= 1) {
+            paginationContainer.innerHTML = '';
+            paginationContainer.classList.add('hidden');
+            return;
         }
 
-        closeModal();
+        paginationContainer.classList.remove('hidden');
+
+        // Navigasi Prev/Next
+        const prevDisabled = currentPage === 1 ? 'disabled class="opacity-50 cursor-not-allowed"' : `onclick="brandController.changePage(${currentPage - 1})" class="hover:bg-gray-50"`;
+        const nextDisabled = currentPage === totalPages ? 'disabled class="opacity-50 cursor-not-allowed"' : `onclick="brandController.changePage(${currentPage + 1})" class="hover:bg-gray-50"`;
+
+        let pageButtons = '';
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === currentPage) {
+                pageButtons += `<button aria-current="page" class="relative z-10 inline-flex items-center bg-indigo-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">${i}</button>`;
+            } else {
+                pageButtons += `<button onclick="brandController.changePage(${i})" class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">${i}</button>`;
+            }
+        }
+
+        // Kalkulasi Info Data (Contoh: Menampilkan 1 - 2 dari 5 hasil)
+        const startItem = ((currentPage - 1) * state.limit) + 1;
+        const endItem = Math.min(currentPage * state.limit, totalItems);
+
+        paginationContainer.innerHTML = `
+            <div class="flex items-center justify-between w-full">
+                <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm text-gray-700">
+                            Menampilkan <span class="font-medium">${startItem}</span> - <span class="font-medium">${endItem}</span> dari <span class="font-medium">${totalItems}</span> hasil
+                        </p>
+                    </div>
+                    <div>
+                        <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                            <button ${prevDisabled} class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 focus:z-20 focus:outline-offset-0">
+                                <span class="sr-only">Previous</span>
+                                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                            ${pageButtons}
+                            <button ${nextDisabled} class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 focus:z-20 focus:outline-offset-0">
+                                <span class="sr-only">Next</span>
+                                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // FUNGSI BARU: Mengubah Halaman
+    function changePage(page) {
+        state.page = page;
+        loadData();
+    }
+
+    function search() {
+        state.keyword = searchInput.value;
         state.page = 1;
-        showToast(isEdit ? 'Brand updated' : 'Brand created', 'success');
-        loadBrands();
-    } catch {
-        btn.disabled = false;
-        btn.textContent = originalText;
-        isSubmitting = false;
-        showModalError('Network error');
-    } finally {
-    btn.disabled = false;
-    btn.textContent = 'Save';
-    isSubmitting = false;
+        loadData();
     }
-}
 
-let deleteTargetId = null;
+    function showModal() { modalEl.classList.remove('hidden'); }
+    function hideModal() { modalEl.classList.add('hidden'); }
 
-function openDeleteModal(id, name) {
-    deleteTargetId = id;
-    $('deleteBrandInfo').textContent = `"${name}" will be permanently removed.`;
-    $('deleteModalOverlay').classList.remove('hidden');
-    $('deleteModalOverlay').classList.add('flex');
-}
+    function showAddModal() {
+        form.reset();
+        document.getElementById('brandId').value = '';
+        document.getElementById('brandModalLabel').innerText = 'Tambah Brand Baru';
+        showModal();
+    }
 
-function closeDeleteModal() {
-    deleteTargetId = null;
-    $('deleteModalOverlay').classList.add('hidden');
-    $('deleteModalOverlay').classList.remove('flex');
-    $('deleteError').classList.add('hidden');
-}
+    async function showEditModal(id) {
+        try {
+            const response = await webCall(`/Brand/Detail?id=${id}`);
+            const data = response.data;
 
-function showDeleteError(msg) {
-    $('deleteErrorText').textContent = msg;
-    $('deleteError').classList.remove('hidden');
-}
+            document.getElementById('brandId').value = data.id;
+            document.getElementById('brandCode').value = data.code;
+            document.getElementById('brandName').value = data.name;
 
-async function confirmDelete() {
-    if (!deleteTargetId) return;
-    showDeleteError('');
+            document.getElementById('brandModalLabel').innerText = 'Edit Brand';
+            showModal();
+        } catch (error) {
+            alert(`Gagal mengambil data: ${error.message}`);
+        }
+    }
 
-    try {
-        const res = await fetch(`/Brand/Delete/${deleteTargetId}`, { method: 'DELETE' });
-        const json = await res.json();
-
-        if (!res.ok || json.status === 'Error') {
-            if (res.status === 401) return window.location.href = '/Auth/Login';
-            return showDeleteError(json.message || `Server error (${res.status})`);
+    async function save() {
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
         }
 
-        closeDeleteModal();
-        showToast('Brand deleted', 'success');
-        loadBrands();
-    } catch {
-        showDeleteError('Network error');
-    }
-}
+        const id = document.getElementById('brandId').value;
+        const isEdit = id !== '';
 
-async function deleteBrand(id) {
-    try {
-        const res = await fetch(`/Brand/Detail/${id}`);
-        if (!res.ok) {
-            if (res.status === 401) return window.location.href = '/Auth/Login';
-            const err = await res.json().catch(() => ({}));
-            return showToast(err.message || `Server error (${res.status})`);
+        const payload = {
+            code: document.getElementById('brandCode').value.toUpperCase(),
+            name: document.getElementById('brandName').value
+        };
+
+        const method = isEdit ? 'PUT' : 'POST';
+        const url = isEdit ? `/Brand/Update?id=${id}` : `/Brand/Create`;
+
+        try {
+            await webCall(url, method, payload);
+            hideModal();
+            alert(`Data berhasil ${isEdit ? 'diperbarui' : 'disimpan'}.`);
+            loadData();
+        } catch (error) {
+            console.error("Error save:", error);
+            alert(`Gagal menyimpan data: ${error.message}`);
         }
-        const json = await res.json();
-        if (json.status === 'Error') return showToast(json.message);
-        openDeleteModal(id, json.data?.name || 'Unknown');
-    } catch {
-        showToast('Network error');
     }
-}
 
-document.addEventListener('DOMContentLoaded', loadBrands);
+    async function deleteData(id) {
+        if (confirm('Apakah Anda yakin ingin menghapus data brand ini?')) {
+            try {
+                await webCall(`/Brand/Delete?id=${id}`, 'DELETE');
+                alert('Data berhasil dihapus.');
+
+                // Pastikan jika data di halaman terakhir dihapus habis, mundur 1 halaman
+                const currentRows = tbody.querySelectorAll('tr').length;
+                if (currentRows === 1 && state.page > 1) {
+                    state.page--;
+                }
+
+                loadData();
+            } catch (error) {
+                alert(`Gagal menghapus data: ${error.message}`);
+            }
+        }
+    }
+
+    return {
+        init: init,
+        search: search,
+        showAddModal: showAddModal,
+        showEditModal: showEditModal,
+        hideModal: hideModal,
+        save: save,
+        deleteData: deleteData,
+        changePage: changePage // Daftarkan fungsi changePage di sini
+    };
+})();
+
+document.addEventListener("DOMContentLoaded", function () {
+    brandController.init();
+});

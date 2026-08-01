@@ -1,365 +1,303 @@
-let state = {
-    page: 1,
-    search: '',
-    limit: 10
-};
-
-
-let searchTimer;
-let currentDeleteId = null;
-
-document.addEventListener('DOMContentLoaded', () => {
-    loadTypeDropdown();
-    loadData();
-});
-
-function renderPagination(pagination) {
-    const container = document.getElementById('pagination');
-
-    // Sembunyikan pagination jika data kosong
-    if (pagination.totalItems === 0 || pagination.totalItems <= state.limit) {
-        container.classList.add('hidden');
-        return;
-    }
-
-    container.classList.remove('hidden');
-
-    // Kalkulasi item yang sedang ditampilkan (misal: "Showing 1 to 10 of 25")
-    const startItem = ((pagination.currentPage - 1) * pagination.limit) + 1;
-    const endItem = Math.min(pagination.currentPage * pagination.limit, pagination.totalItems);
-
-    let html = `
-        <div class="text-sm text-gray-500">
-            Showing <span class="font-medium text-gray-900">${startItem}</span> to <span class="font-medium text-gray-900">${endItem}</span> of <span class="font-medium text-gray-900">${pagination.totalItems}</span> results
-        </div>
-        <div class="flex items-center gap-2">
-    `;
-
-    // Render Tombol "Previous"
-    if (pagination.hasPreviousPage) {
-        html += `<button onclick="changePage(${pagination.currentPage - 1})" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Previous</button>`;
-    } else {
-        html += `<button disabled class="px-3 py-1.5 text-sm font-medium text-gray-400 bg-gray-50 border border-gray-200 rounded-lg cursor-not-allowed">Previous</button>`;
-    }
-
-    // Render Info Halaman (Page X of Y)
-    html += `<span class="text-sm font-medium text-gray-700 px-2">Page ${pagination.currentPage} of ${pagination.totalPages}</span>`;
-
-    // Render Tombol "Next"
-    if (pagination.hasNextPage) {
-        html += `<button onclick="changePage(${pagination.currentPage + 1})" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Next</button>`;
-    } else {
-        html += `<button disabled class="px-3 py-1.5 text-sm font-medium text-gray-400 bg-gray-50 border border-gray-200 rounded-lg cursor-not-allowed">Next</button>`;
-    }
-
-    html += `</div>`;
-    container.innerHTML = html;
-}
-
-// ================= GANTI HALAMAN =================
-function changePage(newPage) {
-    state.page = newPage;
-    loadData(); // Hit API lagi berdasarkan page yang baru
-}
-
-// ================= GET BRANDS UNTUK DROPDOWN =================
-async function loadTypeDropdown() {
-    try {
-        const response = await fetch('/Type/List?limit=1000');
-        const result = await response.json();
-
-        const select = document.getElementById('typeId');
-        if (result.status.toLowerCase() === "success") {
-            result.data.forEach(b => {
-                select.innerHTML += `<option value="${b.id}">${b.code} | ${b.name}</option>`;
-            });
-        }
-    } catch (error) {
-        console.error("Error loading type dropdown:", error);
-    }
-}
-
-// ================= 1. FUNGSI SAAT USER MENGETIK (DEBOUNCE) =================
-function onSearchInput() {
-    clearTimeout(searchTimer);
-    const input = document.getElementById('searchInput');
-    document.getElementById('clearBtn').classList.toggle('hidden', input.value.length === 0);
-
-    // Tunggu 500ms setelah user selesai mengetik
-    searchTimer = setTimeout(() => {
-        state.search = input.value.trim(); // Simpan keyword ke state
-        state.page = 1; // Wajib reset ke page 1 tiap kali pencarian baru
-        loadData();
-    }, 500);
-}
-
-function clearSearch() {
-    const input = document.getElementById('searchInput');
-    input.value = '';
-    document.getElementById('clearBtn').classList.add('hidden');
-
-    state.search = '';
-    state.page = 1; // Reset ke page 1
-    loadData();
-    input.focus();
-}
-
-// ================= 3. FUNGSI LOAD DATA (TERMASUK SEARCH) =================
-// Tambahkan parameter page dan limit agar fleksibel
-async function loadData() {
-    const tbody = document.getElementById('typeTableBody');
-    tbody.innerHTML = `<tr><td colspan="6" class="py-16 text-center text-gray-400 text-sm">Loading data...</td></tr>`;
-
-    try {
-        // Build URL menggunakan state
-        let url = `/Model/List?page=${state.page}&limit=${state.limit}`;
-        if (state.search !== '') {
-            url += `&keyword=${encodeURIComponent(state.search)}`;
-        }
-
-        const response = await fetch(url);
-        const result = await response.json();
-
-        if (result.status.toLowerCase() === "success") {
-            if (!result.data || result.data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="py-16 text-center text-gray-500 text-sm">No types found.</td></tr>`;
-                document.getElementById('pagination').classList.add('hidden');
-                return;
-            }
-
-            // Render Data ke Table
-            tbody.innerHTML = result.data.map(item => `
-                <tr class="hover:bg-gray-50/50 transition-colors">
-                    <td class="py-3 px-4 text-sm text-gray-900 font-semibold">${item.typeName}</td>
-                    <td class="py-3 px-4 text-sm text-gray-900">${item.code}</td>
-                    <td class="py-3 px-4 text-sm text-gray-500">${item.name}</td>
-                    <td class="py-3 px-4 text-sm text-gray-500">${item.year}</td>
-                    <td class="py-3 px-4 text-sm text-gray-500">${new Intl.NumberFormat('id-ID', {
-                style: 'currency',
-                currency: 'IDR',
-                minimumFractionDigits: 2
-            }).format(item.price)
-                }</td>
-                    <td class="py-3 px-4 text-sm text-gray-500">${item.stock}</td>
-                    <td class="py-3 px-4">
-                        <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${item.isActive ? 'bg-green-50 text-green-700 ring-green-600/20' : 'bg-red-50 text-red-700 ring-red-600/20'} ring-1 ring-inset">
-                            ${item.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                    </td>
-                    <td class="py-3 px-4 text-sm text-gray-500">
-                        <div class="flex items-center gap-3">
-                            <button onclick="openEditModal(${item.id})" class="text-indigo-600 hover:text-indigo-900 font-medium transition-colors">Edit</button>
-                            <button onclick="openDeleteModal(${item.id}, '${item.code} - ${item.name}')" class="text-red-600 hover:text-red-900 font-medium transition-colors">Delete</button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
-
-            // Panggil fungsi render pagination
-            if (result.pagination) {
-                renderPagination(result.pagination);
-            }
-
-        } else {
-            tbody.innerHTML = `<tr><td colspan="6" class="py-16 text-center text-red-500 text-sm">${result.message || 'Failed to load data.'}</td></tr>`;
-            document.getElementById('pagination').classList.add('hidden');
-        }
-    } catch (error) {
-        console.error("API Error:", error);
-        tbody.innerHTML = `<tr><td colspan="6" class="py-16 text-center text-red-500 text-sm">Connection error to server.</td></tr>`;
-        document.getElementById('pagination').classList.add('hidden');
-    }
-}
-// ================= MODAL CONTROLS =================
-function openCreateModal() {
-    document.getElementById('modalTitle').textContent = 'Create Model';
-    document.getElementById('modelId').value = '';
-    document.getElementById('typeId').value = '';
-    document.getElementById('modelCode').value = '';
-    document.getElementById('modelName').value = '';
-    document.getElementById('modelYear').value = '';
-    document.getElementById('modelPrice').value = '';
-    document.getElementById('modelStock').value = '';
-    document.getElementById('modalError').classList.add('hidden');
-
-    document.getElementById('modalOverlay').classList.replace('hidden', 'flex');
-}
-
-async function openEditModal(id) {
-    try {
-        // Melakukan Fetch GET ke MVC Controller -> Diteruskan ke /api/type/{id}
-        const response = await fetch(`/Model/Detail?id=${id}`);
-        const result = await response.json();
-
-        // Cek status response case-insensitive
-        if (result.status.toLowerCase() === "success") {
-            document.getElementById('modalTitle').textContent = 'Edit Type';
-
-            // Auto-fill dialog form dengan data dari database
-            document.getElementById('modelId').value = result.data.id;
-            document.getElementById('typeId').value = result.data.typeId;
-            document.getElementById('modelCode').value = result.data.code;
-            document.getElementById('modelName').value = result.data.name;
-            document.getElementById('modelYear').value = result.data.year;
-            document.getElementById('modelPrice').value = result.data.price;
-            document.getElementById('modelStock').value = result.data.stock;
-
-            // Sembunyikan error dan tampilkan modal
-            document.getElementById('modalError').classList.add('hidden');
-            document.getElementById('modalOverlay').classList.replace('hidden', 'flex');
-        } else {
-            alert(result.message || "Data not found.");
-        }
-    } catch (error) {
-        console.error("Error fetching detail:", error);
-        alert("Failed to load type detail from server.");
-    }
-}
-
-function closeModal() {
-    document.getElementById('modalOverlay').classList.replace('flex', 'hidden');
-}
-
-// ================= POST / PUT (SAVE) =================
-async function submitForm() {
-    const id = document.getElementById('modelId').value;
-    const typeId = document.getElementById('typeId').value;
-    const code = document.getElementById('modelCode').value.trim();
-    const name = document.getElementById('modelName').value.trim();
-    const year = document.getElementById('modelYear').value;
-    const price = document.getElementById('modelPrice').value;
-    const stock = document.getElementById('modelStock').value;
-
-    const errorBox = document.getElementById('modalError');
-    const errorText = document.getElementById('modalErrorText');
-    const saveBtn = document.getElementById('saveBtn');
-
-    // Validasi kosong
-    if (!typeId || !code || !name || !year || !price || !stock) {
-        errorText.textContent = "All fields are required.";
-        errorBox.classList.remove('hidden');
-        return;
-    }
-
-
-    if (code.length > 3) {
-        errorText.textContent = "Code cannot more than 3 Char";
-        errorBox.classList.remove('hidden');
-        return;
-    }
-
-    // Validasi Tahun
-    if (parseInt(year) < 1900) {
-        errorText.textContent = "Year must be 1900 or greater.";
-        errorBox.classList.remove('hidden');
-        return;
-    }
-
-    // Siapkan JSON Payload sesuai Request BE
-    const payload = {
-        typeId: parseInt(typeId),
-        code: code.toUpperCase(),
-        name: name,
-        year: parseInt(year),
-        price: parseFloat(price),
-        stock: parseInt(stock),
-        isActive: true // Selalu true sesuai requirement
+/**
+ * Modul Controller Javascript untuk Master Model (Vanilla JS & Tailwind)
+ */
+const modelController = (function () {
+    let state = {
+        keyword: '',
+        page: 1,
+        limit: 10
     };
 
-    saveBtn.disabled = true;
-    saveBtn.textContent = "Saving...";
+    // DOM Elements
+    let tbody, form, modalEl, searchInput, paginationContainer, typeDropdown;
 
-    try {
-        // Tentukan Method dan URL
-        const url = id ? `/Model/Update?id=${id}` : '/Model/Create';
-        const method = id ? 'PUT' : 'POST';
+    function init() {
+        tbody = document.getElementById('modelTableBody');
+        form = document.getElementById('modelForm');
+        modalEl = document.getElementById('modelModal');
+        searchInput = document.getElementById('searchInput');
+        paginationContainer = document.getElementById('paginationContainer');
+        typeDropdown = document.getElementById('modelTypeId');
 
-        // Lakukan Fetch Request
-        const response = await fetch(url, {
+        loadTypes(); // Ambil list Tipe untuk dropdown
+        loadData();
+
+        searchInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') search();
+        });
+    }
+
+    async function webCall(url, method = 'GET', data = null) {
+        const options = {
             method: method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        };
+
+        if (data) {
+            options.body = JSON.stringify(data);
+        }
+
+        const response = await fetch(url, options);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
         const result = await response.json();
 
-        // Sukses Simpan
-        if (result.status.toLowerCase() === "success") {
-            closeModal();
-            loadData(); // Refresh Data Tabel Types
-        } else {
-            // Tampilkan error validasi dari BE
-            errorText.textContent = result.message || "Failed to save data.";
-            errorBox.classList.remove('hidden');
+        if (result.status === "Error") {
+            throw new Error(result.message);
         }
-    } catch (error) {
-        console.error("Save Error:", error);
-        errorText.textContent = "Failed to communicate with server.";
-        errorBox.classList.remove('hidden');
-    } finally {
-        // Kembalikan kondisi tombol
-        saveBtn.disabled = false;
-        saveBtn.textContent = "Save";
+
+        return result;
     }
-}
 
-// ================= DELETE =================
-// ================= DELETE DATA =================
-// 1. Fungsi ini dipanggil dari tombol "Delete" di dalam tabel untuk memunculkan konfirmasi
-function openDeleteModal(id, info) {
-    currentDeleteId = id; // Simpan ID yang mau dihapus di memori
-    document.getElementById('deleteModelInfo').textContent = info; // Tampilkan nama item di modal
-    document.getElementById('deleteError').classList.add('hidden');
+    // Mengambil data Tipe untuk mengisi Select Option
+    async function loadTypes() {
+        try {
+            const response = await webCall('/Type/List?page=1&limit=1000');
+            const types = response.data;
 
-    // Tampilkan Modal Konfirmasi
-    const modal = document.getElementById('deleteModalOverlay');
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-}
+            typeDropdown.innerHTML = '<option value="">-- Pilih Tipe --</option>';
+            types.forEach(t => {
+                const option = document.createElement('option');
+                option.value = t.id;
+                // Menampilkan format: KODE - Nama Tipe
+                option.textContent = `${t.code} - ${t.name}`;
+                typeDropdown.appendChild(option);
+            });
+        } catch (error) {
+            console.error("Gagal memuat list tipe:", error);
+        }
+    }
 
-// 2. Fungsi untuk menutup modal konfirmasi
-function closeDeleteModal() {
-    currentDeleteId = null;
-    const modal = document.getElementById('deleteModalOverlay');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-}
+    async function loadData() {
+        tbody.innerHTML = '<tr><td colspan="8" class="px-6 py-8 text-center text-sm text-gray-500">Memuat data...</td></tr>';
 
-// 3. Fungsi ini dipanggil saat tombol merah "Delete" di dalam modal diklik
-async function confirmDelete() {
-    if (!currentDeleteId) return;
+        const queryUrl = `/Model/List?keyword=${encodeURIComponent(state.keyword)}&page=${state.page}&limit=${state.limit}`;
 
-    const btnConfirm = document.getElementById('confirmDeleteBtn');
+        try {
+            const response = await webCall(queryUrl);
+            renderTable(response.data);
+            renderPagination(response.pagination);
+        } catch (error) {
+            console.error("Gagal memuat data:", error);
+            tbody.innerHTML = '<tr><td colspan="8" class="px-6 py-8 text-center text-sm text-red-500">Terjadi kesalahan saat memuat data.</td></tr>';
+            paginationContainer.classList.add('hidden');
+        }
+    }
 
-    // Set tombol ke state loading agar user tidak bisa double click
-    btnConfirm.disabled = true;
-    btnConfirm.textContent = "Deleting...";
+    // Format angka ke format Rupiah
+    function formatRupiah(number) {
+        return new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0
+        }).format(number);
+    }
 
-    try {
-        // Melakukan Fetch DELETE ke MVC Controller
-        const response = await fetch(`/Model/Delete?id=${currentDeleteId}`, {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' }
+    function renderTable(data) {
+        tbody.innerHTML = '';
+
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="px-6 py-8 text-center text-sm text-gray-500">Tidak ada data ditemukan.</td></tr>';
+            return;
+        }
+
+        data.forEach((item) => {
+            const statusBadge = item.isActive
+                ? `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Aktif</span>`
+                : `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Nonaktif</span>`;
+
+            // Cek properti camelCase (typeName) sesuai IModelService.cs -> ModelItem
+            const typeName = item.typeName || '-';
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 uppercase">
+                        ${item.code}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">${item.name}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${typeName}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">${item.year}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">${formatRupiah(item.price)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium text-gray-900">${item.stock}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-center">${statusBadge}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                    <button onclick="modelController.showEditModal(${item.id})" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded-md mr-2 transition-colors">Edit</button>
+                    <button onclick="modelController.deleteData(${item.id})" class="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-md transition-colors">Hapus</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
         });
-
-        const result = await response.json();
-
-        // Cek jika response status dari controller adalah Success
-        if (result.status.toLowerCase() === "success") {
-            closeDeleteModal(); // Tutup modal
-            loadData(); // Panggil ulang data tabel (refresh UI)
-        } else {
-            // Tampilkan pesan error dari Backend ke dalam modal
-            document.getElementById('deleteErrorText').textContent = result.message || "Failed to delete data.";
-            document.getElementById('deleteError').classList.remove('hidden');
-        }
-    } catch (error) {
-        console.error("Delete Error:", error);
-        document.getElementById('deleteErrorText').textContent = "Connection error to server.";
-        document.getElementById('deleteError').classList.remove('hidden');
-    } finally {
-        // Kembalikan state tombol
-        btnConfirm.disabled = false;
-        btnConfirm.textContent = "Delete";
     }
-}
+
+    function renderPagination(pagination) {
+        const totalPages = pagination?.totalPages || pagination?.TotalPages || 0;
+        const currentPage = pagination?.currentPage || pagination?.CurrentPage || state.page;
+        const totalItems = pagination?.totalItems || pagination?.TotalItems || 0;
+
+        if (totalPages <= 1) {
+            paginationContainer.innerHTML = '';
+            paginationContainer.classList.add('hidden');
+            return;
+        }
+
+        paginationContainer.classList.remove('hidden');
+
+        const prevDisabled = currentPage === 1 ? 'disabled class="opacity-50 cursor-not-allowed"' : `onclick="modelController.changePage(${currentPage - 1})" class="hover:bg-gray-50 cursor-pointer"`;
+        const nextDisabled = currentPage === totalPages ? 'disabled class="opacity-50 cursor-not-allowed"' : `onclick="modelController.changePage(${currentPage + 1})" class="hover:bg-gray-50 cursor-pointer"`;
+
+        let pageButtons = '';
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === currentPage) {
+                pageButtons += `<button aria-current="page" class="relative z-10 inline-flex items-center bg-indigo-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">${i}</button>`;
+            } else {
+                pageButtons += `<button onclick="modelController.changePage(${i})" class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">${i}</button>`;
+            }
+        }
+
+        const startItem = ((currentPage - 1) * state.limit) + 1;
+        const endItem = Math.min(currentPage * state.limit, totalItems);
+
+        paginationContainer.innerHTML = `
+            <div class="flex items-center justify-between w-full">
+                <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm text-gray-700">
+                            Menampilkan <span class="font-medium">${startItem}</span> - <span class="font-medium">${endItem}</span> dari <span class="font-medium">${totalItems}</span> hasil
+                        </p>
+                    </div>
+                    <div>
+                        <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                            <button ${prevDisabled} class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 focus:z-20 focus:outline-offset-0">
+                                <span class="sr-only">Previous</span>
+                                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd" /></svg>
+                            </button>
+                            ${pageButtons}
+                            <button ${nextDisabled} class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 focus:z-20 focus:outline-offset-0">
+                                <span class="sr-only">Next</span>
+                                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" /></svg>
+                            </button>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function changePage(page) {
+        state.page = page;
+        loadData();
+    }
+
+    function search() {
+        state.keyword = searchInput.value;
+        state.page = 1;
+        loadData();
+    }
+
+    function showModal() { modalEl.classList.remove('hidden'); }
+    function hideModal() { modalEl.classList.add('hidden'); }
+
+    function showAddModal() {
+        form.reset();
+        document.getElementById('modelId').value = '';
+        document.getElementById('modelIsActive').checked = true;
+        document.getElementById('modelModalLabel').innerText = 'Tambah Model Baru';
+        showModal();
+    }
+
+    async function showEditModal(id) {
+        try {
+            const response = await webCall(`/Model/Detail?id=${id}`);
+            const data = response.data;
+
+            document.getElementById('modelId').value = data.id;
+            // Perhatikan properti camelCase typeId karena DTO Backend
+            document.getElementById('modelTypeId').value = data.typeId;
+            document.getElementById('modelCode').value = data.code;
+            document.getElementById('modelName').value = data.name;
+            document.getElementById('modelYear').value = data.year;
+            document.getElementById('modelPrice').value = data.price;
+            document.getElementById('modelStock').value = data.stock;
+            document.getElementById('modelIsActive').checked = data.isActive;
+
+            document.getElementById('modelModalLabel').innerText = 'Edit Model';
+            showModal();
+        } catch (error) {
+            alert(`Gagal mengambil data: ${error.message}`);
+        }
+    }
+
+    async function save() {
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        const id = document.getElementById('modelId').value;
+        const isEdit = id !== '';
+
+        // Payload sesuai Controller ModelRequest
+        const payload = {
+            typeId: parseInt(document.getElementById('modelTypeId').value),
+            code: document.getElementById('modelCode').value.toUpperCase(),
+            name: document.getElementById('modelName').value,
+            year: parseInt(document.getElementById('modelYear').value),
+            price: parseFloat(document.getElementById('modelPrice').value),
+            stock: parseInt(document.getElementById('modelStock').value),
+            isActive: document.getElementById('modelIsActive').checked
+        };
+
+        const method = isEdit ? 'PUT' : 'POST';
+        const url = isEdit ? `/Model/Update?id=${id}` : `/Model/Create`;
+
+        try {
+            await webCall(url, method, payload);
+            hideModal();
+            alert(`Data berhasil ${isEdit ? 'diperbarui' : 'disimpan'}.`);
+            loadData();
+        } catch (error) {
+            console.error("Error save:", error);
+            alert(`Gagal menyimpan data: ${error.message}`);
+        }
+    }
+
+    async function deleteData(id) {
+        if (confirm('Apakah Anda yakin ingin menghapus data model ini?')) {
+            try {
+                await webCall(`/Model/Delete?id=${id}`, 'DELETE');
+                alert('Data berhasil dihapus.');
+
+                const currentRows = tbody.querySelectorAll('tr').length;
+                if (currentRows === 1 && state.page > 1) {
+                    state.page--;
+                }
+
+                loadData();
+            } catch (error) {
+                alert(`Gagal menghapus data: ${error.message}`);
+            }
+        }
+    }
+
+    return {
+        init: init,
+        search: search,
+        changePage: changePage,
+        showAddModal: showAddModal,
+        showEditModal: showEditModal,
+        hideModal: hideModal,
+        save: save,
+        deleteData: deleteData
+    };
+})();
+
+document.addEventListener("DOMContentLoaded", function () {
+    modelController.init();
+});

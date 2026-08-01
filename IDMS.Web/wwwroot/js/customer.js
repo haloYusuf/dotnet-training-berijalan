@@ -1,329 +1,267 @@
-let state = {
-    page: 1,
-    search: '',
-    limit: 10
-};
+/**
+ * Javascript untuk Master Kustomer (Vanilla JS & Tailwind)
+ * Menggunakan Global Functions
+ */
 
-let searchTimeout = null;
-let isLoading = false;
+// --- Variabel Global ---
+let keyword = '';
+let page = 1;
+let limit = 10;
 
-const $ = id => document.getElementById(id);
-const html = (str, ctx) => str.replace(/\$\{(\w+)\}/g, (_, k) => ctx[k] ?? '');
+let tbody;
+let form;
+let modalEl;
+let searchInput;
+let paginationContainer;
 
-function debounce(fn, ms) {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(fn, ms);
-}
+// --- Inisialisasi Saat Halaman Dimuat ---
+document.addEventListener("DOMContentLoaded", function () {
+    tbody = document.getElementById('customerTableBody');
+    form = document.getElementById('customerForm');
+    modalEl = document.getElementById('customerModal');
+    searchInput = document.getElementById('searchInput');
+    paginationContainer = document.getElementById('paginationContainer');
 
-function showToast(message, type = 'error') {
-    const toast = document.createElement('div');
-    const colors = {
-        error: 'bg-red-500',
-        success: 'bg-emerald-500',
-        warning: 'bg-amber-500'
+    loadData();
+
+    // Trigger pencarian dengan tombol Enter
+    searchInput.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') search();
+    });
+});
+
+// --- Wrapper Fetch ---
+async function webCall(url, method = 'GET', data = null) {
+    const options = {
+        method: method,
+        headers: { 'Content-Type': 'application/json' }
     };
-    toast.className = `fixed top-4 right-4 z-50 ${colors[type]} text-white px-5 py-3 rounded-lg shadow-lg text-sm font-medium transition-all duration-300 translate-y-0 opacity-0`;
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    requestAnimationFrame(() => toast.classList.remove('opacity-0'));
-    setTimeout(() => {
-        toast.classList.add('opacity-0');
-        setTimeout(() => toast.remove(), 300);
-    }, 4000);
+
+    if (data) options.body = JSON.stringify(data);
+
+    const response = await fetch(url, options);
+
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (result.status === "Error") {
+        throw new Error(result.message);
+    }
+
+    return result;
 }
 
-function showSkeleton() {
-    $('brandTableBody').innerHTML = Array.from({ length: 5 }, () => `
-        <tr class="border-b border-gray-100">
-            <td class="py-3 px-4"><div class="h-4 bg-gray-200 rounded w-12 animate-pulse"></div></td>
-            <td class="py-3 px-4"><div class="h-4 bg-gray-200 rounded w-48 animate-pulse"></div></td>
-            <td class="py-3 px-4"><div class="h-5 bg-gray-200 rounded-full w-16 animate-pulse"></div></td>
-            <td class="py-3 px-4"><div class="h-4 bg-gray-200 rounded w-24 animate-pulse"></div></td>
-        </tr>
-    `).join('');
+// --- Fungsi Formating ---
+// Mengubah string tanggal dari API (contoh: "2024-01-01T00:00:00") menjadi string input date ("2024-01-01")
+function formatDateForInput(dateString) {
+    if (!dateString) return '';
+    return dateString.split('T')[0];
 }
 
-async function loadBrands() {
-    if (isLoading) return;
-    isLoading = true;
+// Menampilkan format tanggal rapi untuk tabel
+function formatDateForDisplay(dateString) {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+}
 
-    state.search = $('searchInput').value;
-    $('pagination').classList.add('hidden');
-    showSkeleton();
+// --- Fungsi Utama ---
+async function loadData() {
+    tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-sm text-gray-500">Memuat data...</td></tr>';
+
+    const queryUrl = `/Customer/List?search=${encodeURIComponent(keyword)}&page=${page}&limit=${limit}`;
 
     try {
-        const params = new URLSearchParams({ search: state.search, page: state.page, limit: state.limit });
-        const res = await fetch(`/Customer/List?${params}`);
-        const json = await res.json();
+        const response = await webCall(queryUrl);
+        renderTable(response.data);
+        renderPagination(response.pagination);
+    } catch (error) {
+        console.error("Gagal memuat data:", error);
+        tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-sm text-red-500">Terjadi kesalahan saat memuat data.</td></tr>';
+        paginationContainer.classList.add('hidden');
+    }
+}
 
-        if (!res.ok || json.status === 'Error') {
-            if (res.status === 401) return window.location.href = '/Auth/Login';
-            showToast(json.message || `Server error (${res.status})`);
-            $('brandTableBody').innerHTML = `<tr><td colspan="4" class="py-16 text-center text-gray-400 text-sm">Failed to load data</td></tr>`;
-            return;
-        }
+function renderTable(data) {
+    tbody.innerHTML = '';
 
-        const items = json.data;
-        console.log(items);
-        if (!items?.length) {
-            $('brandTableBody').innerHTML = `<tr><td colspan="4" class="py-16 text-center text-gray-400 text-sm">
-                <div class="flex flex-col items-center gap-2">
-                    <svg class="w-10 h-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
-                    <span>${state.search ? `No brands matching "${state.search}"` : 'No brands yet'}</span>
-                </div>
-            </td></tr>`;
+    if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-sm text-gray-500">Tidak ada data ditemukan.</td></tr>';
+        return;
+    }
+
+    data.forEach((item) => {
+        const statusBadge = item.isActive
+            ? `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Aktif</span>`
+            : `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Nonaktif</span>`;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">${item.nik || '-'}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${item.fullName || '-'}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <div>${item.phone || '-'}</div>
+                <div class="text-xs text-gray-400">${item.email || '-'}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDateForDisplay(item.birthDate)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-center">${statusBadge}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                <button onclick="showEditModal(${item.id})" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded-md mr-2 transition-colors">Edit</button>
+                <button onclick="deleteData(${item.id})" class="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-md transition-colors">Hapus</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function renderPagination(pagination) {
+    const totalPages = pagination?.totalPages || pagination?.TotalPages || 0;
+    const currentPage = pagination?.currentPage || pagination?.CurrentPage || page;
+    const totalItems = pagination?.totalItems || pagination?.TotalItems || 0;
+
+    if (totalPages <= 1) {
+        paginationContainer.innerHTML = '';
+        paginationContainer.classList.add('hidden');
+        return;
+    }
+
+    paginationContainer.classList.remove('hidden');
+
+    const prevDisabled = currentPage === 1 ? 'disabled class="opacity-50 cursor-not-allowed"' : `onclick="changePage(${currentPage - 1})" class="hover:bg-gray-50 cursor-pointer"`;
+    const nextDisabled = currentPage === totalPages ? 'disabled class="opacity-50 cursor-not-allowed"' : `onclick="changePage(${currentPage + 1})" class="hover:bg-gray-50 cursor-pointer"`;
+
+    let pageButtons = '';
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === currentPage) {
+            pageButtons += `<button aria-current="page" class="relative z-10 inline-flex items-center bg-indigo-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">${i}</button>`;
         } else {
-            $('brandTableBody').innerHTML = items.map(item => `
-                <tr class="border-b border-gray-50 hover:bg-gray-50/80 transition-colors">
-                    <td class="py-3.5 px-4"><span class="font-mono text-sm font-medium text-gray-900">${esc(item.nik)}</span></td>
-                    <td class="py-3.5 px-4 text-gray-700">${esc(item.fullName)}</td>
-                    <td class="py-3.5 px-4 text-gray-700">${esc(item.phone)}</td>
-                    <td class="py-3.5 px-4 text-gray-700">${esc(item.email)}</td>
-                    <td class="py-3.5 px-4">${item.isActive
-                    ? '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Active</span>'
-                    : '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20"><span class="w-1.5 h-1.5 rounded-full bg-red-400"></span>Inactive</span>'}
-                    </td>
-                    <td class="py-3.5 px-4">
-                        <button onclick="editBrand(${item.id})" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm mr-2 transition-colors">Edit</button>
-                        <button onclick="deleteBrand(${item.id})" class="text-red-500 hover:text-red-700 font-medium text-sm transition-colors">Delete</button>
-                    </td>
-                </tr>
-            `).join('');
+            pageButtons += `<button onclick="changePage(${i})" class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">${i}</button>`;
         }
-
-        renderPagination(json.pagination);
-    } catch {
-        showToast('Network error. Please check your connection.');
-        $('brandTableBody').innerHTML = `<tr><td colspan="4" class="py-16 text-center text-gray-400 text-sm">Connection failed</td></tr>`;
-    } finally {
-        isLoading = false;
     }
-}
 
-function renderPagination(p) {
-    const el = $('pagination');
-    if (!p || p.totalPages <= 1) return el.classList.add('hidden');
-    el.classList.remove('hidden');
+    const startItem = ((currentPage - 1) * limit) + 1;
+    const endItem = Math.min(currentPage * limit, totalItems);
 
-    const pages = [];
-    for (let i = 1; i <= p.totalPages; i++) pages.push(i);
-
-    el.innerHTML = `
-        <div class="text-sm text-gray-500">
-            Page <span class="font-medium text-gray-700">${p.currentPage}</span> of <span class="font-medium text-gray-700">${p.totalPages}</span>
-            &middot; ${p.totalItems} items
+    paginationContainer.innerHTML = `
+        <div class="flex items-center justify-between w-full">
+            <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                <div>
+                    <p class="text-sm text-gray-700">
+                        Menampilkan <span class="font-medium">${startItem}</span> - <span class="font-medium">${endItem}</span> dari <span class="font-medium">${totalItems}</span> hasil
+                    </p>
+                </div>
+                <div>
+                    <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                        <button ${prevDisabled} class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 focus:z-20 focus:outline-offset-0">
+                            <span class="sr-only">Previous</span>
+                            <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd" /></svg>
+                        </button>
+                        ${pageButtons}
+                        <button ${nextDisabled} class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 focus:z-20 focus:outline-offset-0">
+                            <span class="sr-only">Next</span>
+                            <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" /></svg>
+                        </button>
+                    </nav>
+                </div>
+            </div>
         </div>
-        <div class="flex items-center gap-1">
-            <button onclick="goToPage(${p.currentPage - 1})" ${p.hasPreviousPage ? '' : 'disabled'}
-                class="px-2.5 py-1.5 rounded-md text-sm font-medium transition-colors ${p.hasPreviousPage ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-300 cursor-not-allowed'}">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-            </button>
-            ${pages.map(i => `
-                <button onclick="goToPage(${i})"
-                    class="w-8 h-8 rounded-md text-sm font-medium transition-colors ${i === p.currentPage ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'}">${i}</button>
-            `).join('')}
-            <button onclick="goToPage(${p.currentPage + 1})" ${p.hasNextPage ? '' : 'disabled'}
-                class="px-2.5 py-1.5 rounded-md text-sm font-medium transition-colors ${p.hasNextPage ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-300 cursor-not-allowed'}">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-            </button>
-        </div>`;
+    `;
 }
 
-function goToPage(page) {
-    state.page = page;
-    loadBrands();
+function changePage(newPage) {
+    page = newPage;
+    loadData();
 }
 
-function onSearchInput() {
-    state.page = 1;
-    debounce(loadBrands, 300);
+function search() {
+    keyword = searchInput.value;
+    page = 1;
+    loadData();
 }
 
-function clearSearch() {
-    $('searchInput').value = '';
-    state.page = 1;
-    loadBrands();
+// --- Kontrol Modal ---
+function showModal() { modalEl.classList.remove('hidden'); }
+function hideModal() { modalEl.classList.add('hidden'); }
+
+function showAddModal() {
+    form.reset();
+    document.getElementById('customerId').value = '';
+    document.getElementById('customerModalLabel').innerText = 'Tambah Kustomer Baru';
+    showModal();
 }
 
-function esc(str) {
-    const d = document.createElement('div');
-    d.textContent = str;
-    return d.innerHTML;
-}
-
-function openModal(title, data = null) {
-    hideModalError();
-
-    const modal = $('modalOverlay');
-    console.log(data);
-    $('modalTitle').textContent = title;
-    $('custId').value = data?.id ?? '';
-    $('custNik').value = data?.nik ?? '';
-    $('custFullName').value = data?.fullName ?? '';
-    //     $('custBirthDate').value = new Date(data?.birthDate ?? '').toLocaleDateString("en-US", {
-    //   month: "2-digit",
-    //   day: "2-digit",
-    //   year: "numeric"
-    // })  ;
-    $('custBirthDate').value = data?.birthDate ? data.birthDate.substring(0, 10) : "";
-    $('custPhone').value = data?.phone ?? '';
-    $('custEmail').value = data?.email ?? '';
-    $('custAddress').value = data?.address ?? '';
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    setTimeout(() => $('custNik').focus(), 100);
-}
-
-function closeModal() {
-    $('modalOverlay').classList.add('hidden');
-    $('modalOverlay').classList.remove('flex');
-    hideModalError();
-}
-
-function showModalError(msg) {
-    const el = $('modalError');
-    $('modalErrorText').textContent = msg;
-    el.classList.remove('hidden');
-}
-
-function hideModalError() {
-    $('modalError').classList.add('hidden');
-}
-
-function openCreateModal() {
-    openModal('Create Customer');
-}
-
-async function editBrand(id) {
+async function showEditModal(id) {
     try {
-        const res = await fetch(`/Customer/Detail/${id}`);
-        if (!res.ok) {
-            if (res.status === 401) return window.location.href = '/Auth/Login';
-            const err = await res.json().catch(() => ({}));
-            return showToast(err.message || `Server error (${res.status})`);
-        }
-        const json = await res.json();
-        if (json.status === 'Error') return showToast(json.message);
-        openModal('Edit Brand', json.data);
-    } catch {
-        showToast('Network error');
+        const response = await webCall(`/Customer/Detail?id=${id}`);
+        const data = response.data;
+
+        document.getElementById('customerId').value = data.id;
+        document.getElementById('customerNik').value = data.nik || '';
+        document.getElementById('customerFullName').value = data.fullName || '';
+        document.getElementById('customerBirthDate').value = formatDateForInput(data.birthDate);
+        document.getElementById('customerPhone').value = data.phone || '';
+        document.getElementById('customerEmail').value = data.email || '';
+        document.getElementById('customerAddress').value = data.address || '';
+
+        document.getElementById('customerModalLabel').innerText = 'Edit Kustomer';
+        showModal();
+    } catch (error) {
+        alert(`Gagal mengambil data: ${error.message}`);
     }
 }
 
-let isSubmitting = false;
+// --- Fungsi Simpan & Hapus ---
+async function save() {
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
 
-async function submitForm() {
-    if (isSubmitting) return;
-    hideModalError();
+    const id = document.getElementById('customerId').value;
+    const isEdit = id !== '';
 
-    const id = $('custId').value;
-    const nik = $('custNik').value.trim();
-    const fullName = $('custFullName').value.trim();
-    const birthDate = new Date($('custBirthDate').value.trim()).toISOString();
-    const phone = $('custPhone').value.trim();
-    const email = $('custEmail').value.trim();
-    const address = $('custAddress').value.trim();
+    // Perhatikan penamaan "FullName" menggunakan kapital awal untuk menyesuaikan payload yang diserap backend (walau javascript normalnya fullName).
+    const payload = {
+        nik: document.getElementById('customerNik').value,
+        FullName: document.getElementById('customerFullName').value,
+        birthDate: new Date(document.getElementById('customerBirthDate').value).toISOString() || null,
+        phone: document.getElementById('customerPhone').value,
+        email: document.getElementById('customerEmail').value,
+        address: document.getElementById('customerAddress').value,
+        status: true,
+    };
 
-    // if (!code) return showModalError('Code is required'), $('custId').focus();
-    // if (code.length > 3) return showModalError('Code cannot exceed 3 characters');
-
-    const isEdit = !!id;
-    const url = isEdit ? `/Customer/Update/${id}` : '/Customer/Create';
     const method = isEdit ? 'PUT' : 'POST';
-    const btn = $('saveBtn');
-    const originalText = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = 'Saving...';
-    isSubmitting = true;
+    const url = isEdit ? `/Customer/Update?id=${id}` : `/Customer/Create`;
 
     try {
-        const res = await fetch(url, {
-            method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nik, fullName, birthDate, phone, email, address })
-        });
-
-        const json = await res.json();
-
-        if (!res.ok || json.status === 'Error') {
-            btn.disabled = false;
-            btn.textContent = originalText;
-            isSubmitting = false;
-            return showModalError(json.message || `Server error (${res.status})`);
-        }
-
-        closeModal();
-        state.page = 1;
-        showToast(isEdit ? 'Customer updated' : 'Customer created', 'success');
-        loadBrands();
-    } catch {
-        btn.disabled = false;
-        btn.textContent = originalText;
-        isSubmitting = false;
-        showModalError('Network error');
-    } finally {
-        btn.disabled = false;
-        btn.textContent = 'Save';
-        isSubmitting = false;
+        await webCall(url, method, payload);
+        hideModal();
+        alert(`Data berhasil ${isEdit ? 'diperbarui' : 'disimpan'}.`);
+        loadData();
+    } catch (error) {
+        console.error("Error save:", error);
+        alert(`Gagal menyimpan data: ${error.message}`);
     }
 }
 
-let deleteTargetId = null;
+async function deleteData(id) {
+    if (confirm('Apakah Anda yakin ingin menghapus data kustomer ini?')) {
+        try {
+            await webCall(`/Customer/Delete?id=${id}`, 'DELETE');
+            alert('Data berhasil dihapus.');
 
-function openDeleteModal(id, name) {
-    deleteTargetId = id;
-    $('deleteBrandInfo').textContent = `"${name}" will be permanently removed.`;
-    $('deleteModalOverlay').classList.remove('hidden');
-    $('deleteModalOverlay').classList.add('flex');
-}
+            const currentRows = tbody.querySelectorAll('tr').length;
+            if (currentRows === 1 && page > 1) {
+                page--;
+            }
 
-function closeDeleteModal() {
-    deleteTargetId = null;
-    $('deleteModalOverlay').classList.add('hidden');
-    $('deleteModalOverlay').classList.remove('flex');
-    $('deleteError').classList.add('hidden');
-}
-
-function showDeleteError(msg) {
-    $('deleteErrorText').textContent = msg;
-    $('deleteError').classList.remove('hidden');
-}
-
-async function confirmDelete() {
-    if (!deleteTargetId) return;
-    showDeleteError('');
-
-    try {
-        const res = await fetch(`/Customer/Delete/${deleteTargetId}`, { method: 'DELETE' });
-        const json = await res.json();
-
-        if (!res.ok || json.status === 'Error') {
-            if (res.status === 401) return window.location.href = '/Auth/Login';
-            return showDeleteError(json.message || `Server error (${res.status})`);
+            loadData();
+        } catch (error) {
+            alert(`Gagal menghapus data: ${error.message}`);
         }
-
-        closeDeleteModal();
-        showToast('Brand deleted', 'success');
-        loadBrands();
-    } catch {
-        showDeleteError('Network error');
     }
 }
-
-async function deleteBrand(id) {
-    try {
-        const res = await fetch(`/Customer/Detail/${id}`);
-        if (!res.ok) {
-            if (res.status === 401) return window.location.href = '/Auth/Login';
-            const err = await res.json().catch(() => ({}));
-            return showToast(err.message || `Server error (${res.status})`);
-        }
-        const json = await res.json();
-        if (json.status === 'Error') return showToast(json.message);
-        openDeleteModal(id, json.data?.fullName || 'Unknown');
-    } catch {
-        showToast('Network error');
-    }
-}
-
-document.addEventListener('DOMContentLoaded', loadBrands);

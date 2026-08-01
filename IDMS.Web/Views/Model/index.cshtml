@@ -1,209 +1,160 @@
 @{
-    ViewData["Title"] = "Model";
+    ViewData["Title"] = "Master Model Kendaraan";
 }
 
-<div class="space-y-6">
-    <div class="flex items-center justify-between">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900">Model</h1>
-            <p class="text-sm text-gray-500 mt-1">Manage your vehicle Model and type relations</p>
+<div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Master Model</h1>
+        <p class="text-sm text-gray-500 mt-1">Kelola data model, harga, dan stok kendaraan beserta relasinya dengan
+            tipe.</p>
         </div>
-        <button onclick="openCreateModal()"
-                class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium shadow-sm transition-all">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        <button onclick="modelController.showAddModal()"
+                class="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:w-auto transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd"
+                      d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                      clip-rule="evenodd" />
             </svg>
-            Create Model
+            Tambah Model Baru
         </button>
     </div>
 
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
-        <div class="p-4 border-b border-gray-100">
-            <div class="relative">
-                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none"
-                     viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input type="text" id="searchInput" placeholder="Search types by name or code..."
-                       oninput="onSearchInput()"
-                       class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder:text-gray-400">
-                <button onclick="clearSearch()" id="clearBtn"
-                        class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 hidden">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+    <!-- Card Container -->
+    <div class="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
+        <!-- Header & Search -->
+        <div class="p-4 border-b border-gray-200 bg-gray-50 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <h2 class="text-lg font-semibold text-gray-800">Daftar Model</h2>
+            <div class="relative w-full sm:w-72">
+                <input type="text" id="searchInput" placeholder="Cari kode/nama model..."
+                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2 border">
+                <button onclick="modelController.search()"
+                        class="absolute inset-y-0 right-0 px-3 flex items-center bg-gray-100 border-l border-gray-300 rounded-r-md hover:bg-gray-200 text-gray-600">
+                    Cari
                 </button>
             </div>
         </div>
 
+        <!-- Table (Tanpa Kolom "No") -->
         <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead>
-                    <tr class="bg-gray-50/50">
-                        <th class="py-3.5 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                            Type</th>
-                            <th class="py-3.5 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                Code</th>
-                                <th class="py-3.5 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                    Name</th>
-                                    <th class="py-3.5 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                        Year</th>
-                                        <th class="py-3.5 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                            Price</th>
-                                            <th class="py-3.5 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                                Stock</th>
-                                                <th class="py-3.5 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                                    Status</th>
-                                                    <th class="py-3.5 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                                        Actions</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody id="typeTableBody" class="divide-y divide-gray-50">
-                                                    <tr>
-                                                        <td colspan="6" class="py-16 text-center text-gray-400 text-sm">Loading...</td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                        <div id="pagination" class="hidden px-4 py-3 border-t border-gray-100 flex items-center justify-between"></div>
-                                    </div>
-                                </div>
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kode</th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama
+                            Model</th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipe</th>
+                            <th scope="col"
+                                class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Tahun
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Harga
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Stok
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-48">
+                                Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modelTableBody" class="bg-white divide-y divide-gray-200">
+                            <tr>
+                                <td colspan="8" class="px-6 py-8 text-center text-sm text-gray-500">Memuat data...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
-                                <!-- CREATE/EDIT MODAL -->
-                                <div id="modalOverlay" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden items-center justify-center z-50"
-                                     onclick="if(event.target===this)closeModal()">
-                                    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6 animate-modal">
-                                        <div class="flex items-center justify-between mb-6">
-                                            <h2 class="text-lg font-bold text-gray-900" id="modalTitle">Create Model</h2>
-                                            <button type="button" onclick="closeModal()"
-                                                    class="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100">
-                                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                                </svg>
-                                            </button>
-                                        </div>
+                <!-- Container Pagination -->
+                <div id="paginationContainer" class="bg-gray-50 px-4 py-3 border-t border-gray-200 sm:px-6 hidden">
+                    <!-- Elemen Paginasi dirender oleh JS -->
+                </div>
+            </div>
 
+            <!-- Modal Form -->
+            <div id="modelModal" class="relative z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+                <div class="fixed inset-0 z-10 overflow-y-auto">
+                    <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                        <div
+                            class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl">
+                            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4" id="modelModalLabel">Form Model
+                                    Kendaraan</h3>
+                                    <form id="modelForm">
                                         <input type="hidden" id="modelId">
 
-                                        <div class="space-y-4">
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1.5">Type <span
-                                                    class="text-red-500">*</span></label>
-                                                    <select id="typeId"
-                                                            class="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white">
-                                                        <option value="">Select a type...</option>
-                                                    </select>
-                                                </div>
+                                        <div class="mb-4">
+                                            <label for="modelTypeId" class="block text-sm font-medium text-gray-700">Tipe Kendaraan
+                                                <span class="text-red-500">*</span></label>
+                                                <select id="modelTypeId" required
+                                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2 bg-white">
+                                                    <option value="">-- Pilih Tipe --</option>
+                                                    <!-- Option dirender oleh JS -->
+                                                </select>
+                                            </div>
 
-                                                <div class="grid grid-cols-2 gap-4">
-                                                    <div>
-                                                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Code <span
+                                            <div class="mb-4 flex gap-4">
+                                                <div class="w-1/3">
+                                                    <label for="modelCode" class="block text-sm font-medium text-gray-700">Kode <span
+                                                        class="text-red-500">*</span></label>
+                                                        <input type="text" id="modelCode" maxlength="20" required placeholder="Contoh: MDL01"
+                                                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2 uppercase">
+                                                    </div>
+                                                    <div class="w-2/3">
+                                                        <label for="modelName" class="block text-sm font-medium text-gray-700">Nama Model <span
                                                             class="text-red-500">*</span></label>
-                                                            <input type="text" id="modelCode" maxlength="3"
-                                                                   class="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all uppercase"
-                                                                   placeholder="e.g. SUV">
+                                                            <input type="text" id="modelName" required placeholder="Contoh: CBR 250RR ABS"
+                                                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2">
                                                         </div>
-                                                        <div>
-                                                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Year <span
-                                                                class="text-red-500">*</span></label>
-                                                                <input type="number" id="modelYear" min="1900"
-                                                                       class="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-                                                                       placeholder="e.g. 2024">
-                                                            </div>
-                                                        </div>
+                                                    </div>
 
-                                                        <div>
-                                                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Name <span
+                                                    <div class="mb-4 flex gap-4">
+                                                        <div class="w-1/3">
+                                                            <label for="modelYear" class="block text-sm font-medium text-gray-700">Tahun <span
                                                                 class="text-red-500">*</span></label>
-                                                                <input type="text" id="modelName" maxlength="100"
-                                                                       class="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-                                                                       placeholder="e.g. Sport Utility Vehicle"
-                                                                       onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();submitForm()}">
+                                                                <input type="number" id="modelYear" min="1900" max="2099" required placeholder="2024"
+                                                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2">
                                                             </div>
-
-                                                            <div class="grid grid-cols-2 gap-4">
-                                                                <div>
-                                                                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Price <span
+                                                            <div class="w-1/3">
+                                                                <label for="modelPrice" class="block text-sm font-medium text-gray-700">Harga (Rp) <span
+                                                                    class="text-red-500">*</span></label>
+                                                                    <input type="number" id="modelPrice" min="0" step="0.01" required
+                                                                           placeholder="Contoh: 75000000"
+                                                                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2">
+                                                                </div>
+                                                                <div class="w-1/3">
+                                                                    <label for="modelStock" class="block text-sm font-medium text-gray-700">Stok <span
                                                                         class="text-red-500">*</span></label>
-                                                                        <input type="number" id="modelPrice" step="any"
-                                                                               class="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all uppercase"
-                                                                               placeholder="e.g. 30000">
-                                                                    </div>
-                                                                    <div>
-                                                                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Stock <span
-                                                                            class="text-red-500">*</span></label>
-                                                                            <input type="number" id="modelStock" min="0"
-                                                                                   class="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-                                                                                   placeholder="e.g. 1">
-                                                                        </div>
+                                                                        <input type="number" id="modelStock" min="0" required placeholder="0"
+                                                                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2">
                                                                     </div>
                                                                 </div>
 
-                                                        
-
-                                                                <div id="modalError" class="hidden mt-4 bg-red-50 border border-red-200 rounded-lg p-3">
-                                                                    <p class="text-sm text-red-700" id="modalErrorText"></p>
+                                                                <div class="mb-2 flex items-center">
+                                                                    <input type="checkbox" id="modelIsActive"
+                                                                           class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" checked>
+                                                                    <label for="modelIsActive" class="ml-2 block text-sm text-gray-900">Status Aktif</label>
                                                                 </div>
-
-                                                                <div class="flex gap-3 justify-end mt-6">
-                                                                    <button type="button" onclick="closeModal()"
-                                                                            class="px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Cancel</button>
-                                                                    <button type="button" onclick="submitForm()" id="saveBtn"
-                                                                            class="px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm">Save</button>
-                                                                </div>
-                                                            </div>
+                                                            </form>
                                                         </div>
-
-                                                        <!-- DELETE MODAL -->
-                                                        <div id="deleteModalOverlay"
-                                                             class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm hidden items-center justify-center z-50"
-                                                             onclick="if(event.target===this)closeDeleteModal()">
-                                                            <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4 p-6 animate-modal">
-                                                                <div class="text-center">
-                                                                    <div class="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                                                                        <svg class="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                                                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                                                        </svg>
-                                                                    </div>
-                                                                    <h3 class="text-lg font-bold text-gray-900 mb-2">Delete Model</h3>
-                                                                    <p class="text-sm text-gray-500 mb-1">Are you sure you want to delete this model?</p>
-                                                                    <p class="text-sm text-gray-900 font-semibold" id="deleteModelInfo"></p>
-                                                                </div>
-
-                                                                <div id="deleteError" class="hidden mt-4 bg-red-50 border border-red-200 rounded-lg p-3">
-                                                                    <p class="text-sm text-red-700" id="deleteErrorText"></p>
-                                                                </div>
-
-                                                                <div class="flex gap-3 justify-center mt-6">
-                                                                    <button type="button" onclick="closeDeleteModal()"
-                                                                            class="px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Cancel</button>
-                                                                    <button type="button" onclick="confirmDelete()" id="confirmDeleteBtn"
-                                                                            class="px-4 py-2.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors shadow-sm">Delete</button>
-                                                                </div>
-                                                            </div>
+                                                        <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                                                            <button type="button" onclick="modelController.save()"
+                                                                    class="inline-flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm">Simpan</button>
+                                                            <button type="button" onclick="modelController.hideModal()"
+                                                                    class="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">Batal</button>
                                                         </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
 
-                                                        <style>
-                                                            @@keyframes modalIn {
-                                                                from {
-                                                                    opacity: 0;
-                                                                    transform: scale(0.95) translateY(10px);
-                                                                }
-
-                                                                to {
-                                                                    opacity: 1;
-                                                                    transform: scale(1) translateY(0);
-                                                                }
-                                                            }
-
-                                                            .animate-modal {
-                                                                animation: modalIn 0.2s ease-out;
-                                                            }
-                                                        </style>
-
-                                                        @section Scripts {
-                                                            <script src="~/js/model.js" asp-append-version="true"></script>
-                                                        }
+                                        @section Scripts {
+                                            <script src="~/js/model.js"></script>
+                                        }

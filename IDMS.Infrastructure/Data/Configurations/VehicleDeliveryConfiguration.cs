@@ -14,7 +14,7 @@ namespace IDMS.Infrastructure.Data.Configurations
         {
             base.Configure(builder);
 
-            builder.ToTable("trn_applications", "dev");
+            builder.ToTable("trn_vehicle_delivery", "dev");
 
             builder.Property(c => c.DeliveryNo).HasColumnName("delivery_no").IsRequired();
 
