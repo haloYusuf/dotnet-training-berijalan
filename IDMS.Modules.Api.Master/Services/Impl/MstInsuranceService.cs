@@ -39,7 +39,7 @@ namespace IDMS.Modules.Api.Master.Services.Impl
                 CreatedBy = _user.GetFullName()
             };
 
-            _context.mstInsurances.Add(entity);
+            _context.MstInsurances.Add(entity);
             await _context.SaveChangesAsync();
 
             return new ResMstInsuranceDto
@@ -55,7 +55,7 @@ namespace IDMS.Modules.Api.Master.Services.Impl
 
         public async Task<ResMstInsuranceDto?> GetInsuranceByIdAsync(int id)
         {
-            var data = await _context.mstInsurances.AsNoTracking()
+            var data = await _context.MstInsurances.AsNoTracking()
             .Where(v => v.Id == id && v.DeletedAt == null)
             .Select(v => new ResMstInsuranceDto
             {

@@ -47,7 +47,7 @@ namespace IDMS.Modules.Api.Master.Services.Impl
                 })
                 .ToListAsync();
 
-            return (data, total); // Mengembalikan Tuple sesuai standar MstBrandController
+            return (data, total);
         }
 
         public async Task<ResMstTypeDto> CreateAsync(ReqMstTypeCreateDto request)

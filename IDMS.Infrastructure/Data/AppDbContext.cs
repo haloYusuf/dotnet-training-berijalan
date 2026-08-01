@@ -19,7 +19,11 @@ public class AppDbContext : DbContext
 
     public DbSet<MstDealer> MstDealers => Set<MstDealer>();
 
-    public DbSet<MstInsurance> mstInsurances => Set<MstInsurance>();
+    public DbSet<MstInsurance> MstInsurances => Set<MstInsurance>();
+
+    public DbSet<TrnApplication> TrnApplications => Set<TrnApplication>();
+
+    public DbSet<TrnVehicleDelivery> TrnVehicleDeliveries => Set<TrnVehicleDelivery>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);

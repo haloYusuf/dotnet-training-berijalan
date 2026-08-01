@@ -15,7 +15,7 @@ namespace IDMS.Api.Controllers
     [ApiController]
     [Route("api/dealer")]
     [Authorize]
-    public class DealerController : Controller
+    public class DealerController : ControllerBase
     {
         private readonly IMstDealerService _service;
 

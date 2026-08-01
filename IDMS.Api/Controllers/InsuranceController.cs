@@ -11,7 +11,7 @@ namespace IDMS.Api.Controllers
     [ApiController]
     [Route("api/insurance")]
     [Authorize]
-    public class InsuranceController : Controller
+    public class InsuranceController : ControllerBase
     {
         private readonly IMstInsuranceService _service;
 

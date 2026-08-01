@@ -13,7 +13,7 @@ namespace IDMS.Modules.Api.Master.Dto.Request.MstInsurance
         public string Name { get; set; } = null!;
 
         [Required(ErrorMessage = "Coverage Type is required")]
-        [AllowedValues("TLO", "COMPREHENSIVE", "COMBINATION", ErrorMessage = "Coverage Type isnt valid")]
+        [AllowedValues("TLO", "COMPREHENSIVE", "COMBINATION", ErrorMessage = "Coverage Type is not valid")]
         public string CoverageType { get; set; } = null!;
 
         public decimal Rate { get; set; }

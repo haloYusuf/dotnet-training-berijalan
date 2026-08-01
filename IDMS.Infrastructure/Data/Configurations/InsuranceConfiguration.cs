@@ -17,9 +17,11 @@ namespace IDMS.Infrastructure.Data.Configurations
             builder.ToTable("mst_insurance", "dev");
 
             // 3. Mapping kolom spesifik ke snake_case
-            builder.Property(c => c.Code).HasColumnName("code");
-            builder.Property(c => c.Name).HasColumnName("name");
-            builder.Property(c => c.CoverageType).HasColumnName("coverage_type");
+            builder.Property(c => c.Code).HasColumnName("code").IsRequired();
+            builder.Property(c => c.Name).HasColumnName("name").IsRequired();
+            builder.Property(c => c.CoverageType).HasColumnName("coverage_type").IsRequired();
+            builder.Property(c => c.Rate).HasColumnName("rate").IsRequired();
+
         }
     }
 }
