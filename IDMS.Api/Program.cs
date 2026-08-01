@@ -55,6 +55,9 @@ builder.Services.AddScoped<ICurrentUserServices, CurrentUserServices>();
 builder.Services.AddScoped<IMstDealerService, MstDealerService>();
 builder.Services.AddScoped<IMstInsuranceService, MstInsuranceService>();
 
+builder.Services.AddScoped<ITrnApplicationService, TrnApplicationService>();
+builder.Services.AddScoped<ITrnVehicleDeliveryService, TrnVehicleDeliveryService>();
+
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddControllers().ConfigureApiBehaviorOptions(options =>
