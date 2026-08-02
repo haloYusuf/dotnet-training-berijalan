@@ -119,10 +119,11 @@ function renderTable(data) {
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">${item.applicationNo}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">${item.customerName || `ID: ${item.customerId}`}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.modelName || `ID: ${item.modelId}`}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">${formatRupiah(item.otrPrice)}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">${formatRupiah(item.dpAmount)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900">${formatRupiah(item.otrPrice)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900">${formatRupiah(item.dpAmount)}</td>
             <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
                 <div>${item.tenorMonth} Bulan</div>
                 <div class="text-xs text-gray-400">Bunga: ${item.interestRate}%</div>

@@ -8,6 +8,9 @@ namespace IDMS.Web.Services
     public interface IApplicationService
     {
         Task<(List<ApplicationItem> Data, Pagination? Pagination, string? Error)> GetListAsync(string? keyword, int page, int limit);
+
+        Task<(List<ApplicationItem> Data, string? Error)> GetApprovedListAsync();
+
         Task<(ApplicationItem? Data, string? Error)> GetByIdAsync(int id);
         Task<(ApplicationItem? Data, string? Error)> CreateAsync(ApplicationRequestDto request);
         Task<(ApplicationItem? Data, string? Error)> UpdateAsync(int id, ApplicationRequestDto request);
@@ -18,6 +21,7 @@ namespace IDMS.Web.Services
     public class ApplicationItem
     {
         public int Id { get; set; }
+        public string ApplicationNo { get; set; } = string.Empty;
         public int CustomerId { get; set; }
         public string CustomerName { get; set; } = string.Empty; // Asumsi dikembalikan oleh backend
         public int ModelId { get; set; }

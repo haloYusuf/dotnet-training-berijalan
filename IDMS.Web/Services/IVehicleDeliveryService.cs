@@ -20,6 +20,7 @@ namespace IDMS.Web.Services
         public int Id { get; set; }
         public int ApplicationId { get; set; }
         public int DealerId { get; set; }
+        public string DeliveryNo { get; set; } = string.Empty; 
         public string DealerName { get; set; } = string.Empty;       // Asumsi direlasikan backend
         public int InsuranceId { get; set; }
         public string InsuranceName { get; set; } = string.Empty;    // Asumsi direlasikan backend

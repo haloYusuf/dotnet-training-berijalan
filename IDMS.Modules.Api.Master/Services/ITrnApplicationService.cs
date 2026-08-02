@@ -11,7 +11,7 @@ namespace IDMS.Modules.Api.Master.Services
     {
         Task<(IEnumerable<ResTrnApplicationDto> data, int total)> GetListAsync(ReqTrnApplicationDto request);
 
-        Task<(IEnumerable<ResTrnApplicationDto> data, int total)> GetListApprovedApplicationAsync();
+        Task<IEnumerable<ResTrnApplicationDto>> GetListApprovedApplicationAsync();
 
         Task<ResTrnApplicationDto?> GetApplicationByIdAsync(int id);
 

@@ -38,6 +38,20 @@ namespace IDMS.Web.Services
             catch (Exception ex) { return ([], null, ex.Message); }
         }
 
+        public async Task<(List<ApplicationItem> Data, string? Error)> GetApprovedListAsync()
+        {
+            try
+            {
+                var result = await _api.GetAsync<List<ApplicationItem>>($"{_URL}/approved");
+
+                if (result.Status?.ToLower() == "error")
+                    return ([], result.Message);
+
+                return (result.Data ?? [], null);
+            }
+            catch (Exception ex) { return ([], ex.Message); }
+        }
+
         public async Task<(ApplicationItem? Data, string? Error)> GetByIdAsync(int id)
         {
             try

@@ -37,8 +37,7 @@
             <thead class="bg-gray-50">
                 <tr>
                     <th scope="col"
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aplikasi
-                        (ID)</th>
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NO</th>
                         <th scope="col"
                             class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tgl Kirim
                         </th>
@@ -80,16 +79,17 @@
                                         <form id="delivForm">
                                             <input type="hidden" id="delivId">
 
-                                            <div class="mb-4 flex flex-col sm:flex-row gap-4">
-                                                <div class="w-full sm:w-1/3">
-                                                    <label for="delivApplicationId" class="block text-sm font-medium text-gray-700">Aplikasi
-                                                        / Transaksi <span class="text-red-500">*</span></label>
-                                                        <select id="delivApplicationId" required
-                                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2 bg-white">
-                                                            <option value="">-- Pilih Aplikasi --</option>
-                                                        </select>
-                                                    </div>
-                                                    <div class="w-full sm:w-1/3">
+                                            <div class="mb-4">
+                                                <label for="delivApplicationId" class="block text-sm font-medium text-gray-700">Aplikasi /
+                                                    Transaksi <span class="text-red-500">*</span></label>
+                                                    <select id="delivApplicationId" required
+                                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2 bg-white">
+                                                        <option value="">-- Pilih Aplikasi --</option>
+                                                    </select>
+                                                </div>
+
+                                                <div class="mb-4 flex flex-col sm:flex-row gap-4">
+                                                    <div class="w-full sm:w-1/2">
                                                         <label for="delivDealerId" class="block text-sm font-medium text-gray-700">Dealer
                                                             Pengirim <span class="text-red-500">*</span></label>
                                                             <select id="delivDealerId" required
@@ -97,7 +97,7 @@
                                                                 <option value="">-- Pilih Dealer --</option>
                                                             </select>
                                                         </div>
-                                                        <div class="w-full sm:w-1/3">
+                                                        <div class="w-full sm:w-1/2">
                                                             <label for="delivInsuranceId" class="block text-sm font-medium text-gray-700">Asuransi
                                                                 <span class="text-red-500">*</span></label>
                                                                 <select id="delivInsuranceId" required

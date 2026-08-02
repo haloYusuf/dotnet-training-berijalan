@@ -129,14 +129,12 @@ namespace IDMS.Modules.Api.Master.Services.Impl
             return (data, total);
         }
 
-        public async Task<(IEnumerable<ResTrnApplicationDto> data, int total)> GetListApprovedApplicationAsync()
+        public async Task<IEnumerable<ResTrnApplicationDto>> GetListApprovedApplicationAsync()
         {
             var query = _context.Set<TrnApplication>()
             .Include(x => x.Customer)
             .Include(x => x.Model)
-            .Where(x => x.DeletedAt == null && x.Status.Equals("APPROVED")).AsQueryable();
-
-            var total = await query.CountAsync();
+            .Where(x => x.Status.Equals("APPROVED") && x.DeletedAt == null).AsQueryable();
 
             var data = await query
             .OrderByDescending(x => x.UpdatedAt ?? x.CreatedAt)
@@ -156,7 +154,7 @@ namespace IDMS.Modules.Api.Master.Services.Impl
                 IsActive = v.IsActive,
             }).ToListAsync();
 
-            return (data, total);
+            return data;
         }
 
         public async Task<bool> SoftDeleteAsync(int id)

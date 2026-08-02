@@ -36,6 +36,17 @@ namespace IDMS.Web.Controllers
         }
 
         [HttpGet]
+        public async Task<JsonResult> ApprovedList()
+        {
+            var (data, error) = await _appService.GetApprovedListAsync();
+
+            if (error != null)
+                return Json(new { status = "Error", message = error });
+
+            return Json(new { status = "Success", data});
+        }
+
+        [HttpGet]
         public async Task<JsonResult> Detail(int id)
         {
             var (data, error) = await _appService.GetByIdAsync(id);

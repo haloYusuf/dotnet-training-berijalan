@@ -64,16 +64,19 @@ function formatDateTimeForDisplay(dateString) {
 async function loadDropdowns() {
     try {
         const [appRes, dealerRes, insRes] = await Promise.all([
-            webCall('/Application/List?page=1&limit=1000'),
+            webCall('/Application/ApprovedList'),
             webCall('/Dealer/List?page=1&limit=1000'),
             webCall('/Insurance/List?page=1&limit=1000')
         ]);
+
+
+            console.log(appRes);
 
         appDropdown.innerHTML = '<option value="">-- Pilih Aplikasi --</option>';
         appRes.data.forEach(a => {
             const opt = document.createElement('option');
             opt.value = a.id;
-            opt.textContent = `ID: ${a.id} - Rp ${a.otrPrice}`;
+            opt.textContent = `${a.applicationNo} - Rp ${a.otrPrice}`;
             appDropdown.appendChild(opt);
         });
 
@@ -130,7 +133,7 @@ function renderTable(data) {
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">APP-${item.applicationId}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">APP-${item.deliveryNo}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDateTimeForDisplay(item.deliveryDate)}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 <div class="font-medium text-gray-900">${item.driverName} ${item.driverPhone ? `(${item.driverPhone})` : ''}</div>
