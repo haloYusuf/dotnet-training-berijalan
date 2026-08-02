@@ -3,6 +3,7 @@ using IDMS.Modules.Api.Master.Dto.Request.MstCustomer;
 using IDMS.Modules.Api.Master.Dto.Response;
 using IDMS.Shared.Domain.Entities;
 using IDMS.Shared.Exceptions;
+using IDMS.Shared.Utils;
 using Microsoft.EntityFrameworkCore;
 
 namespace IDMS.Modules.Api.Master.Services.Impl
@@ -10,10 +11,13 @@ namespace IDMS.Modules.Api.Master.Services.Impl
     public class MstCustomerService : IMstCustomerService
     {
         private readonly AppDbContext _context;
+        
+        private readonly ICurrentUserServices _user;
 
-        public MstCustomerService(AppDbContext context)
+        public MstCustomerService(AppDbContext context, ICurrentUserServices user)
         {
             _context = context;
+            _user = user;
         }
 
         public async Task<(IEnumerable<ResMstCustomerDto> data, int total)> GetListAsync(ReqMstCustomerDto request)
@@ -69,7 +73,8 @@ namespace IDMS.Modules.Api.Master.Services.Impl
                 Email = request.Email,
                 Address = request.Address,
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy= _user.GetFullName(),
             };
 
             _context.Set<MstCustomer>().Add(entity);
@@ -102,6 +107,7 @@ namespace IDMS.Modules.Api.Master.Services.Impl
             entity.Address = request.Address;
             entity.IsActive = request.IsActive;
             entity.UpdatedAt = DateTime.UtcNow;
+            entity.UpdatedBy = _user.GetFullName();
 
             await _context.SaveChangesAsync();
 
@@ -115,7 +121,7 @@ namespace IDMS.Modules.Api.Master.Services.Impl
 
             entity.IsActive = false;
             entity.DeletedAt = DateTime.UtcNow;
-            entity.DeletedBy = "Admin1";
+            entity.DeletedBy = _user.GetFullName();
 
             await _context.SaveChangesAsync();
 

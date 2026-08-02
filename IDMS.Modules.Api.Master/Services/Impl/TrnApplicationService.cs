@@ -26,7 +26,7 @@ namespace IDMS.Modules.Api.Master.Services.Impl
 
         private async Task<string> GenerateApplicationNoAsync()
         {
-            var today = DateTime.UtcNow.Date;
+            var today = DateTime.UtcNow.ToLocalTime().Date;
             var dateString = today.ToString("yyyyMMdd");
 
             var todayCount = await _context.TrnApplications
@@ -145,6 +145,12 @@ namespace IDMS.Modules.Api.Master.Services.Impl
         public async Task<ResTrnApplicationDto> UpdateAsync(int id, ReqTrnApplicationUpdateDto request)
         {
             var entity = await _context.Set<TrnApplication>().FirstOrDefaultAsync(x => x.Id == id && x.DeletedAt == null) ?? throw new NotFoundException("Data not found");
+
+            var isModelExist = await _context.Set<MstModel>().AnyAsync(x => x.Id == request.ModelId && x.DeletedAt == null);
+            if (!isModelExist) throw new BadRequestException("Model does not exist");
+
+            var isCustomerExist = await _context.Set<MstCustomer>().AnyAsync(x => x.Id == request.CustomerId && x.DeletedAt == null);
+            if (!isCustomerExist) throw new BadRequestException("Customer does not exist");
 
             entity.CustomerId = request.CustomerId;
             entity.ModelId = request.ModelId;

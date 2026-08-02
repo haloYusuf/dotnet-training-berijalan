@@ -104,7 +104,7 @@ namespace IDMS.Modules.Api.Master.Services.Impl
 
         public async Task<bool> SoftDeleteAsync(int id)
         {
-            var entity = await _context.Set<MstInsurance>().FirstOrDefaultAsync(x => x.Id == id && x.DeletedAt == null) ?? throw new NotFoundException("Dealers not found");
+            var entity = await _context.Set<MstInsurance>().FirstOrDefaultAsync(x => x.Id == id && x.DeletedAt == null) ?? throw new NotFoundException("Insurance Data not found");
 
             entity.IsActive = false;
             entity.DeletedAt = DateTime.UtcNow;
@@ -117,7 +117,11 @@ namespace IDMS.Modules.Api.Master.Services.Impl
 
         public async Task<ResMstInsuranceDto> UpdateAsync(int id, ReqMstInsuranceUpdateDto request)
         {
-            var entity = await _context.Set<MstInsurance>().FirstOrDefaultAsync(x => x.Id == id && x.DeletedAt == null) ?? throw new NotFoundException("Dealer not found");
+            var entity = await _context.Set<MstInsurance>().FirstOrDefaultAsync(x => x.Id == id && x.DeletedAt == null) ?? throw new NotFoundException("Insurance Data not found");
+
+            var exists = await _context.MstInsurances.AnyAsync(e => EF.Functions.ILike(e.Code, request.Code) && e.Id != id);
+            if (exists)
+                throw new ConflictException($"Code '{request.Code}' already exists");
 
             entity.Code = request.Code;
             entity.Name = request.Name;

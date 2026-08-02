@@ -3,6 +3,7 @@ using IDMS.Modules.Api.Master.Dto.Request.MstModel;
 using IDMS.Modules.Api.Master.Dto.Response;
 using IDMS.Shared.Domain.Entities;
 using IDMS.Shared.Exceptions;
+using IDMS.Shared.Utils;
 using Microsoft.EntityFrameworkCore;
 
 namespace IDMS.Modules.Api.Master.Services.Impl
@@ -11,9 +12,12 @@ namespace IDMS.Modules.Api.Master.Services.Impl
     {
         private readonly AppDbContext _context;
 
-        public MstModelService(AppDbContext context)
+        private readonly ICurrentUserServices _user;
+
+        public MstModelService(AppDbContext context, ICurrentUserServices user)
         {
             _context = context;
+            _user = user;
         }
 
         public async Task<(IEnumerable<ResMstModelDto> data, int total)> GetListAsync(ReqMstModelDto request)
@@ -69,7 +73,8 @@ namespace IDMS.Modules.Api.Master.Services.Impl
                 Price = request.Price,
                 Stock = request.Stock,
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = _user.GetFullName(),
             };
 
             _context.Set<MstModel>().Add(entity);
@@ -98,6 +103,7 @@ namespace IDMS.Modules.Api.Master.Services.Impl
             entity.Stock = request.Stock;
             entity.IsActive = request.IsActive;
             entity.UpdatedAt = DateTime.UtcNow;
+            entity.UpdatedBy = _user.GetFullName();
 
             // _context.Set<MstModel>().Update(entity);
             await _context.SaveChangesAsync();
@@ -112,6 +118,7 @@ namespace IDMS.Modules.Api.Master.Services.Impl
 
             entity.IsActive = false;
             entity.DeletedAt = DateTime.UtcNow;
+            entity.DeletedBy = _user.GetFullName();
 
             await _context.SaveChangesAsync();
 
@@ -134,7 +141,7 @@ namespace IDMS.Modules.Api.Master.Services.Impl
                 Year = data.Year,
                 Price = data.Price,
                 Stock = data.Stock,
-                IsActive = data.IsActive
+                IsActive = data.IsActive,
             };
         }
 

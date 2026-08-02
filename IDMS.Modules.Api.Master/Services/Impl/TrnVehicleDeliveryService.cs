@@ -40,10 +40,10 @@ namespace IDMS.Modules.Api.Master.Services.Impl
 
         public async Task<ResTrnVehicleDeliveryDto> CreateAsync(ReqTrnVehicleDeliveryCreateDto request)
         {
-            var isAppValid = await _context.Set<TrnVehicleDelivery>().AnyAsync(x => x.ApplicationId == request.ApplicationId && !x.Application.Status.Equals("APPROVED") && x.DeletedAt == null);
+            var isAppValid = await _context.Set<TrnApplication>().AnyAsync(x => x.Id == request.ApplicationId && !x.Status.Equals("APPROVED") && x.DeletedAt == null);
             if (isAppValid)
             {
-                throw new ConflictException("Application Status is not valid");
+                throw new ConflictException("Application Status is not Approved");
             }
 
             var isStatusValid = await _context.Set<TrnVehicleDelivery>()
@@ -165,12 +165,13 @@ namespace IDMS.Modules.Api.Master.Services.Impl
 
         public async Task<ResTrnVehicleDeliveryDto> UpdateAsync(int id, ReqTrnVehicleDeliveryUpdateDto request)
         {
-            var isStatusValid = await _context.Set<TrnVehicleDelivery>()
-            .Include(x => x.Application)
-            .AnyAsync(x => x.ApplicationId == request.ApplicationId && !x.Application.Status.Equals("APPROVED") && x.DeletedAt == null);
+            var entity = await _context.Set<TrnVehicleDelivery>().FirstOrDefaultAsync(x => x.Id == id && x.DeletedAt == null) ?? throw new NotFoundException("Data not found");
+
+            var isStatusValid = await _context.Set<TrnApplication>()
+            .AnyAsync(x => x.Id == request.ApplicationId && !x.Status.Equals("APPROVED") && x.DeletedAt == null);
             if (isStatusValid)
             {
-                throw new ConflictException("Application Status is not valid");
+                throw new ConflictException("Application Status is not Approved");
             }
 
             var isAnyData = await _context.Set<TrnVehicleDelivery>()
@@ -180,7 +181,6 @@ namespace IDMS.Modules.Api.Master.Services.Impl
             {
                 throw new ConflictException("An entry for this application with the same status has already been recorded.");
             }
-            var entity = await _context.Set<TrnVehicleDelivery>().FirstOrDefaultAsync(x => x.Id == id && x.DeletedAt == null) ?? throw new NotFoundException("Data not found");
 
             entity.ApplicationId = request.ApplicationId;
             entity.DealerId = request.DealerId;

@@ -29,7 +29,7 @@ namespace IDMS.Modules.Api.Master.Services.Impl
             var isCodeExist = await _context.Set<MstDealer>().AnyAsync(x => x.Code == request.Code);
             if (isCodeExist)
             {
-                throw new ConflictException("Code already exists");
+                throw new ConflictException($"Code {request.Code} already exists");
             }
 
             var entity = new MstDealer
@@ -134,6 +134,10 @@ namespace IDMS.Modules.Api.Master.Services.Impl
         public async Task<ResMstDealerDto> UpdateAsync(int id, ReqMstDealerUpdateDto request)
         {
             var entity = await _context.Set<MstDealer>().FirstOrDefaultAsync(x => x.Id == id && x.DeletedAt == null) ?? throw new NotFoundException("Dealer not found");
+
+            var exists = await _context.MstDealers.AnyAsync(e => EF.Functions.ILike(e.Code, request.Code) && e.Id != id);
+            if (exists)
+                throw new ConflictException($"Code '{request.Code}' already exists");
 
             entity.Code = request.Code;
             entity.Name = request.Name;
