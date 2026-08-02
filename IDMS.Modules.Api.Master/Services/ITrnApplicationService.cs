@@ -11,12 +11,14 @@ namespace IDMS.Modules.Api.Master.Services
     {
         Task<(IEnumerable<ResTrnApplicationDto> data, int total)> GetListAsync(ReqTrnApplicationDto request);
 
+        Task<(IEnumerable<ResTrnApplicationDto> data, int total)> GetListApprovedApplicationAsync();
+
         Task<ResTrnApplicationDto?> GetApplicationByIdAsync(int id);
 
         Task<ResTrnApplicationDto> CreateAsync(ReqTrnApplicationCreateDto request);
 
         Task<ResTrnApplicationDto> UpdateAsync(int id, ReqTrnApplicationUpdateDto request);
-        
+
 
         Task<ResTrnApplicationDto> UpdateStatusAsync(int id, string status);
         Task<bool> SoftDeleteAsync(int id);

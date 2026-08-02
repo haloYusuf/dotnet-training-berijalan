@@ -96,7 +96,7 @@ namespace IDMS.Modules.Api.Master.Services.Impl
             var total = await query.CountAsync();
 
             var data = await query
-            .OrderBy(x => x.UpdatedAt ?? x.CreatedAt)
+            .OrderByDescending(x => x.UpdatedAt ?? x.CreatedAt)
             .Skip((request.Page - 1) * request.Limit)
             .Take(request.Limit)
             .Select(v => new ResTrnVehicleDeliveryDto

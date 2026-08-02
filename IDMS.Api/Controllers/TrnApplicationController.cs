@@ -32,6 +32,14 @@ namespace IDMS.Api.Controllers
             return Ok(ApiResponseHelper.Success(HttpContext, data, request.Page, request.Limit, total));
         }
 
+        [HttpGet("approved")]
+        public async Task<IActionResult> GetApprovedList()
+        {
+            var data = await _service.GetListApprovedApplicationAsync();
+
+            return Ok(ApiResponseHelper.Success(HttpContext, data));
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> getById(int id)
         {

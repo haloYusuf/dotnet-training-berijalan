@@ -107,9 +107,39 @@ namespace IDMS.Modules.Api.Master.Services.Impl
             var total = await query.CountAsync();
 
             var data = await query
-            .OrderBy(x => x.UpdatedAt ?? x.CreatedAt)
+            .OrderByDescending(x => x.UpdatedAt ?? x.CreatedAt)
             .Skip((request.Page - 1) * request.Limit)
             .Take(request.Limit)
+            .Select(v => new ResTrnApplicationDto
+            {
+                Id = v.Id,
+                CustomerId = v.Customer.Id,
+                ModelId = v.Model.Id,
+                ApplicationNo = v.ApplicationNo,
+                CustomerName = v.Customer.FullName,
+                ModelName = v.Model.Name,
+                OtrPrice = v.OtrPrice,
+                DpAmount = v.DpAmount,
+                TenorMonth = v.TenorMonth,
+                InterestRate = v.InterestRate,
+                Status = v.Status,
+                IsActive = v.IsActive,
+            }).ToListAsync();
+
+            return (data, total);
+        }
+
+        public async Task<(IEnumerable<ResTrnApplicationDto> data, int total)> GetListApprovedApplicationAsync()
+        {
+            var query = _context.Set<TrnApplication>()
+            .Include(x => x.Customer)
+            .Include(x => x.Model)
+            .Where(x => x.DeletedAt == null && x.Status.Equals("APPROVED")).AsQueryable();
+
+            var total = await query.CountAsync();
+
+            var data = await query
+            .OrderByDescending(x => x.UpdatedAt ?? x.CreatedAt)
             .Select(v => new ResTrnApplicationDto
             {
                 Id = v.Id,
